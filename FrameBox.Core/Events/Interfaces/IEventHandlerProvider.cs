@@ -8,5 +8,5 @@ namespace FrameBox.Core.Events.Interfaces;
 
 public interface IEventHandlerProvider
 {
-
+    IEnumerable<IEventHandler> GetHandlers(IDomainEvent @event);
 }

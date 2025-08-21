@@ -6,8 +6,8 @@ var paymentsDb = builder.AddPostgres("payments-db")
     .WithPgAdmin()
     .WithDataVolume();
 
-var username = builder.AddParameter("rabbitmq-management-username", secret: true);
-var password = builder.AddParameter("rabbitmq-management-password", secret: true);
+var username = builder.AddParameter("rabbitmq-username", secret: true);
+var password = builder.AddParameter("rabbitmq-password", secret: true);
 
 var rabbitMq = builder.AddRabbitMQ("rabbitmq", username, password)
     .WithManagementPlugin();

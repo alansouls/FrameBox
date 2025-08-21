@@ -18,12 +18,14 @@ internal class JsonDomainEventSerializer : IDomainEventSerializer
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    public ValueTask<Result<T>> DeserializeAsync<T>(string serializedDomainEvent, CancellationToken cancellationToken) where T : IDomainEvent
+    public ValueTask<Result<T>> DeserializeAsync<T>(string serializedDomainEvent, CancellationToken cancellationToken)
+        where T : IDomainEvent
     {
         if (string.IsNullOrWhiteSpace(serializedDomainEvent))
         {
             return ValueTask.FromResult<Result<T>>(Result.Error("Serialized domain event cannot be null or empty."));
         }
+
         try
         {
             var domainEvent = JsonSerializer.Deserialize<T>(serializedDomainEvent, _serializerOptions);
@@ -38,6 +40,30 @@ internal class JsonDomainEventSerializer : IDomainEventSerializer
         catch (JsonException ex)
         {
             return ValueTask.FromResult<Result<T>>(Result.Error($"Failed to deserialize domain event: {ex.Message}"));
+        }
+    }
+
+    public ValueTask<Result<IDomainEvent>> DeserializeAsync(string serializedDomainEvent, Type eventType,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(serializedDomainEvent))
+        {
+            return ValueTask.FromResult<Result<IDomainEvent>>(
+                Result.Error("Serialized domain event cannot be null or empty."));
+        }
+
+        try
+        {
+            var domainEventObj = JsonSerializer.Deserialize(serializedDomainEvent, eventType, _serializerOptions);
+
+            return domainEventObj is not IDomainEvent domainEvent
+                ? ValueTask.FromResult<Result<IDomainEvent>>(Result.CriticalError("Deserialized domain event is null."))
+                : ValueTask.FromResult(Result.Success(domainEvent));
+        }
+        catch (JsonException ex)
+        {
+            return ValueTask.FromResult<Result<IDomainEvent>>(
+                Result.Error($"Failed to deserialize domain event: {ex.Message}"));
         }
     }
 
