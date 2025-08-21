@@ -1,0 +1,62 @@
+﻿using FrameBox.Core.Outbox.Interfaces;
+using FrameBox.Core.Outbox.Models;
+using FrameBox.Storage.EFCore.Common;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+
+namespace FrameBox.Storage.EFCore.Outbox;
+
+internal class OutboxDbContextStorage : IOutboxStorage
+{
+    private readonly InternalDbContextWrapper _dbContextWrapper;
+    private readonly TimeProvider _timeProvider;
+
+    public OutboxDbContextStorage(InternalDbContextWrapper dbContextWrapper, TimeProvider timeProvider)
+    {
+        _dbContextWrapper = dbContextWrapper;
+        _timeProvider = timeProvider;
+    }
+
+    public Task AddMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default)
+    {
+        return _dbContextWrapper.Context.AddRangeAsync(messages, cancellationToken);
+    }
+
+    public async Task<IEnumerable<OutboxMessage>> GetMessagesAsync(int maxCount, CancellationToken cancellationToken = default)
+    {
+        if (maxCount <= 0)
+        {
+            return [];
+        }
+
+        var executionStrategy = _dbContextWrapper.Context.Database.CreateExecutionStrategy();
+
+        return await executionStrategy.ExecuteInTransactionAsync(async (ct) =>
+        {
+            var processId = Guid.NewGuid();
+
+            var timeStamp = _timeProvider.GetUtcNow();
+
+            var messagesToUpdateQuery = _dbContextWrapper.Context
+                .Set<OutboxMessage>()
+                .Where(m => m.State == Core.Outbox.Enums.OutboxState.Pending)
+                .OrderBy(m => m.UpdatedAt)
+                .Take(maxCount);
+
+            await messagesToUpdateQuery.ExecuteUpdateAsync(m => m.SetProperty(x => x.State, Core.Outbox.Enums.OutboxState.Sending)
+                .SetProperty(x => x.UpdatedAt, timeStamp).SetProperty(x => x.ProcessId, processId), cancellationToken);
+
+            var messages = await _dbContextWrapper.Context
+                .Set<OutboxMessage>()
+                .Where(m => m.ProcessId == processId)
+                .ToListAsync(cancellationToken);
+
+            return messages;
+        }, verifySucceeded: (ct) => _dbContextWrapper.Context.Set<OutboxMessage>().AnyAsync(o => o.ProcessId == o.ProcessId, cancellationToken: ct), isolationLevel: System.Data.IsolationLevel.RepeatableRead, cancellationToken);
+    }
+
+    public async Task UpdateMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default)
+    {
+        await _dbContextWrapper.Context.SaveChangesAsync(cancellationToken);
+    }
+}

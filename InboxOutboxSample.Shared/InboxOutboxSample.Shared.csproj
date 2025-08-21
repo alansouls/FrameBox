@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FrameBox.Core\FrameBox.Core.csproj" />
+    <ProjectReference Include="..\FrameBox.MessageBroker.RabbitMQ\FrameBox.MessageBroker.RabbitMQ.csproj" />
+    <ProjectReference Include="..\FrameBox.Storage.EFCore\FrameBox.Storage.EFCore.csproj" />
+  </ItemGroup>
+
+</Project>
