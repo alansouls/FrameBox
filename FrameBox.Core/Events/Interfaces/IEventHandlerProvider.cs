@@ -8,4 +8,5 @@ namespace FrameBox.Core.Events.Interfaces;
 
 public interface IEventHandlerProvider
 {
+
 }
