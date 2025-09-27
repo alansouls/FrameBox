@@ -25,6 +25,6 @@ internal class DefaultOutboxMessageFactory : IOutboxMessageFactory
     {
         var eventPayload = await _domainEventSerializer.SerializeAsync(domainEvent, cancellationToken);
 
-        return new OutboxMessage(domainEvent.Id, domainEvent.EventName, eventPayload, _timeProvider.GetUtcNow());
+        return new OutboxMessage(domainEvent.Id, domainEvent.GetType().AssemblyQualifiedName!, eventPayload, _timeProvider.GetUtcNow());
     }
 }

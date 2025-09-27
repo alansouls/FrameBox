@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FrameBox.Core.Inbox.Enums;
+﻿namespace FrameBox.Core.Inbox.Enums;
 
 public enum InboxState
 {
@@ -12,5 +6,6 @@ public enum InboxState
     Running,
     Finished,
     Failed,
-    ReadyToRetry
+    ReadyToRetry,
+    Retrying
 }

@@ -2,13 +2,9 @@
 
 namespace InboxOutboxSample.ApiService.Domain;
 
-public class PaymentCreatedEvent(Guid paymentId, decimal amount) : IDomainEvent
+public record PaymentCreatedEvent(Guid PaymentId, decimal Amount) : IDomainEvent
 {
-    public Guid Id => paymentId;
+    public Guid Id => PaymentId;
 
-    public string EventName => nameof(PaymentCreatedEvent);
-
-    public DateTimeOffset RaisedAt => DateTimeOffset.UtcNow;
-
-    public decimal Amount { get; } = amount;
+    public DateTimeOffset RaisedAt { get; init; } = DateTimeOffset.UtcNow;
 }

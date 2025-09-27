@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FrameBox.Core.Inbox.Models;
 
 namespace FrameBox.Core.Events.Interfaces;
 
 public interface IEventHandlerProvider
 {
-
+    IEventHandler GetEventHandler(string handlerName);
+    IEnumerable<Type> GetEventHandlerTypes(Type eventType);
 }

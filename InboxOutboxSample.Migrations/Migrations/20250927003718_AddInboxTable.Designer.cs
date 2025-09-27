@@ -3,6 +3,7 @@ using System;
 using InboxOutboxSample.Shared.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace InboxOutboxSample.Migrations.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250927003718_AddInboxTable")]
+    partial class AddInboxTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,9 +88,6 @@ namespace InboxOutboxSample.Migrations.Migrations
                     b.Property<Guid?>("ProcessId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("RetryCount")
-                        .HasColumnType("integer");
-
                     b.Property<int>("State")
                         .HasColumnType("integer");
 
@@ -115,6 +115,15 @@ namespace InboxOutboxSample.Migrations.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Payments", (string)null);
+                });
+
+            modelBuilder.Entity("FrameBox.Core.Inbox.Models.InboxMessage", b =>
+                {
+                    b.HasOne("FrameBox.Core.Outbox.Models.OutboxMessage", null)
+                        .WithMany()
+                        .HasForeignKey("OutboxMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

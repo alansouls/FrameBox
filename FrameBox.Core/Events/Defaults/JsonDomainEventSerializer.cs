@@ -1,11 +1,6 @@
 ﻿using Ardalis.Result;
 using FrameBox.Core.Events.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace FrameBox.Core.Events.Defaults;
 
@@ -38,6 +33,29 @@ internal class JsonDomainEventSerializer : IDomainEventSerializer
         catch (JsonException ex)
         {
             return ValueTask.FromResult<Result<T>>(Result.Error($"Failed to deserialize domain event: {ex.Message}"));
+        }
+    }
+
+    public ValueTask<Result<IDomainEvent>> DeserializeAsync(string serializedDomainEvent, Type domainEventType, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(serializedDomainEvent))
+        {
+            return ValueTask.FromResult<Result<IDomainEvent>>(Result.Error("Serialized domain event cannot be null or empty."));
+        }
+        try
+        {
+            var domainEvent = JsonSerializer.Deserialize(serializedDomainEvent, domainEventType, _serializerOptions);
+
+            if (domainEvent == null)
+            {
+                return ValueTask.FromResult<Result<IDomainEvent>>(Result.CriticalError("Deserialized domain event is null."));
+            }
+
+            return ValueTask.FromResult(Result.Success((domainEvent as IDomainEvent)!));
+        }
+        catch (JsonException ex)
+        {
+            return ValueTask.FromResult<Result<IDomainEvent>>(Result.Error($"Failed to deserialize domain event: {ex.Message}"));
         }
     }
 

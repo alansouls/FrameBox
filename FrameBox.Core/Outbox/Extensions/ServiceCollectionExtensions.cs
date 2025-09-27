@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
     {
         services.TryAddSingleton<IOutboxMessageFactory, DefaultOutboxMessageFactory>();
         services.TryAddSingleton<IOutboxDispatcher, OutboxDispatcher>();
+        services.TryAddScoped<IOutboxHandler, DefaultOutboxMessageHandler>();
         services.AddHostedService(sp => (OutboxDispatcher)sp.GetRequiredService<IOutboxDispatcher>());
 
         return services;

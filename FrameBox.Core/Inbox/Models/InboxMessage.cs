@@ -1,11 +1,21 @@
 ﻿using Ardalis.Result;
+using FrameBox.Core.Common.Interfaces;
 using FrameBox.Core.Inbox.Enums;
 using FrameBox.Core.Inbox.Options;
+using System.Text.Json;
 
 namespace FrameBox.Core.Inbox.Models;
 
-public class InboxMessage
+public class InboxMessage : IMessage
 {
+    private static readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false
+    };
+
+    private record InboxMessageData(Guid Id, Guid OutboxMessageId, string HandlerName, string? FailurePayload, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, InboxState State, int RetryCount, Guid? ProcessId);
+
     public Guid Id { get; }
     public Guid OutboxMessageId { get; }
     public string HandlerName { get; }
@@ -14,6 +24,32 @@ public class InboxMessage
     public DateTimeOffset UpdatedAt { get; private set; }
     public InboxState State { get; private set; }
     public int RetryCount { get; private set; }
+    public Guid? ProcessId { get; private set; }
+
+    private InboxMessage(InboxMessageData data)
+    {
+        Id = data.Id;
+        OutboxMessageId = data.OutboxMessageId;
+        HandlerName = data.HandlerName;
+        FailurePayload = data.FailurePayload;
+        CreatedAt = data.CreatedAt;
+        UpdatedAt = data.UpdatedAt;
+        State = data.State;
+        RetryCount = data.RetryCount;
+        ProcessId = data.ProcessId;
+    }
+
+    public static InboxMessage FromJson(ReadOnlySpan<byte> utf8Data)
+    {
+        var data = JsonSerializer.Deserialize<InboxMessageData>(utf8Data, _serializerOptions) ?? throw new InvalidOperationException("Failed to deserialize InboxMessageData");
+
+        return new InboxMessage(data);
+    }
+
+    public byte[] ToJson()
+    {
+        return JsonSerializer.SerializeToUtf8Bytes(this, _serializerOptions);
+    }
 
     public InboxMessage(Guid id, Guid outboxMessageId, string handlerName, DateTimeOffset createdAt)
     {
@@ -24,16 +60,17 @@ public class InboxMessage
         UpdatedAt = createdAt;
         State = InboxState.Pending;
         RetryCount = 0;
+        ProcessId = null;
     }
 
     public Result Start(DateTimeOffset timeStamp)
     {
-        if (State != InboxState.Pending && State != InboxState.ReadyToRetry)
+        if (State != InboxState.Pending && State != InboxState.Retrying)
         {
-            return Result.Error("Message state must be pending or ready to retry.");
+            return Result.Error("Message state must be pending or retrying.");
         }
 
-        if (State == InboxState.ReadyToRetry)
+        if (State == InboxState.Retrying)
         {
             RetryCount++;
         }

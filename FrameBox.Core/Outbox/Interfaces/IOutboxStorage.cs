@@ -6,7 +6,9 @@ public interface IOutboxStorage
 {
     Task AddMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<OutboxMessage>> GetMessagesAsync(int maxCount, CancellationToken cancellationToken = default);
+    Task<IEnumerable<OutboxMessage>> GetMessagesToSendAsync(int maxCount, CancellationToken cancellationToken = default);
 
     Task UpdateMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default);
+
+    Task<OutboxMessage?> GetMessageByIdAsync(Guid messageId, CancellationToken cancellationToken = default);
 }

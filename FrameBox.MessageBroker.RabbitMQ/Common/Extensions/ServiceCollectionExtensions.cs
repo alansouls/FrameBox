@@ -21,4 +21,18 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Requires a RabbitMQ IConnection to be registered in the service collection.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="configuration"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddRabbitMQListener(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<RabbitMQOptions>(options => configuration.GetSection(nameof(RabbitMQOptions)).Bind(options));
+        services.AddHostedService<RabbitMQListener>();
+
+        return services;
+    }
 }

@@ -11,12 +11,12 @@ namespace FrameBox.Core.Outbox.Defaults;
 
 internal class OutboxDispatcher : IOutboxDispatcher, IHostedService
 {
+    private readonly TimeProvider _timeProvider;
     private readonly PeriodicTimer _timer;
     private readonly CancellationTokenSource _timerCancellationTokenSource;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<OutboxDispatcher> _logger;
     private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
-    private readonly TimeProvider _timeProvider;
 
     public OutboxDispatcher(IServiceProvider serviceProvider, ILogger<OutboxDispatcher> logger, TimeProvider timeProvider)
     {
@@ -41,7 +41,7 @@ internal class OutboxDispatcher : IOutboxDispatcher, IHostedService
             using var scope = _serviceProvider.CreateScope();
             var outboxStorage = scope.ServiceProvider.GetRequiredService<IOutboxStorage>();
             var messageBroker = scope.ServiceProvider.GetRequiredService<IMessageBroker>();
-            var messages = await outboxStorage.GetMessagesAsync(InternalOutboxOptions.MaxMessagesPerDispatch, cancellationToken);
+            var messages = await outboxStorage.GetMessagesToSendAsync(InternalOutboxOptions.MaxMessagesPerDispatch, cancellationToken);
             
             try
             {
@@ -53,15 +53,10 @@ internal class OutboxDispatcher : IOutboxDispatcher, IHostedService
 
                 foreach (var message in ex.FailedMessages)
                 {
-                    message.SetAsPending(_timeProvider.GetUtcNow());
+                    message.SetAsFailed(_timeProvider.GetUtcNow());
                 }
 
                 messages = messages.Except(ex.FailedMessages);
-            }
-
-            foreach (var message in messages)
-            {
-                message.SetAsSent(_timeProvider.GetUtcNow());
             }
 
             await outboxStorage.UpdateMessagesAsync(messages, cancellationToken);
@@ -96,6 +91,10 @@ internal class OutboxDispatcher : IOutboxDispatcher, IHostedService
             catch (OperationCanceledException)
             {
                 // Ignore
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error dispatching outbox messages - {Message}", ex.Message);
             }
         }
 

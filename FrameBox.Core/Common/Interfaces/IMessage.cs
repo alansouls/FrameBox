@@ -3,6 +3,7 @@
 public interface IMessage
 {
     Guid Id { get; }
-    string Type { get; }
-    string Payload { get; }
+
+    //TODO: create IMessageSerializer
+    byte[] ToJson();
 }

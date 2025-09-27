@@ -2,7 +2,7 @@
 
 public enum OutboxState
 {
-    Pending,
-    Sending,
-    Sent
+    Sent,
+    Received,
+    Failed
 }

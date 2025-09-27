@@ -15,6 +15,7 @@ public class MyDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ConfigureOutbox();
+        modelBuilder.ConfigureInbox();
 
         var paymentEntity = modelBuilder.Entity<Payment>();
 

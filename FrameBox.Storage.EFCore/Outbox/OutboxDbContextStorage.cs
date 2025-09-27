@@ -22,7 +22,12 @@ internal class OutboxDbContextStorage : IOutboxStorage
         return _dbContextWrapper.Context.AddRangeAsync(messages, cancellationToken);
     }
 
-    public async Task<IEnumerable<OutboxMessage>> GetMessagesAsync(int maxCount, CancellationToken cancellationToken = default)
+    public Task<OutboxMessage?> GetMessageByIdAsync(Guid messageId, CancellationToken cancellationToken = default)
+    {
+        return _dbContextWrapper.Context.Set<OutboxMessage>().FirstOrDefaultAsync(m => m.EventId == messageId, cancellationToken);
+    }
+
+    public async Task<IEnumerable<OutboxMessage>> GetMessagesToSendAsync(int maxCount, CancellationToken cancellationToken = default)
     {
         if (maxCount <= 0)
         {
@@ -39,11 +44,11 @@ internal class OutboxDbContextStorage : IOutboxStorage
 
             var messagesToUpdateQuery = _dbContextWrapper.Context
                 .Set<OutboxMessage>()
-                .Where(m => m.State == Core.Outbox.Enums.OutboxState.Pending)
+                .Where(m => m.State == Core.Outbox.Enums.OutboxState.Failed)
                 .OrderBy(m => m.UpdatedAt)
                 .Take(maxCount);
 
-            await messagesToUpdateQuery.ExecuteUpdateAsync(m => m.SetProperty(x => x.State, Core.Outbox.Enums.OutboxState.Sending)
+            await messagesToUpdateQuery.ExecuteUpdateAsync(m => m.SetProperty(x => x.State, Core.Outbox.Enums.OutboxState.Sent)
                 .SetProperty(x => x.UpdatedAt, timeStamp).SetProperty(x => x.ProcessId, processId), cancellationToken);
 
             var messages = await _dbContextWrapper.Context
@@ -57,6 +62,7 @@ internal class OutboxDbContextStorage : IOutboxStorage
 
     public async Task UpdateMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default)
     {
+        _dbContextWrapper.Context.UpdateRange(messages);
         await _dbContextWrapper.Context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -1,5 +1,7 @@
 ﻿using FrameBox.Core.Common.Exceptions;
 using FrameBox.Core.Common.Interfaces;
+using FrameBox.Core.Inbox.Models;
+using FrameBox.Core.Outbox.Models;
 using FrameBox.MessageBroker.RabbitMQ.Common.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,16 +13,10 @@ namespace FrameBox.MessageBroker.RabbitMQ.Common.Services;
 
 public class RabbitMQBroker : IMessageBroker
 {
-    private static readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
-    };
-
     private readonly IConnection _connection;
     private readonly RabbitMQOptions _options;
     private readonly ILogger<RabbitMQBroker> _logger;
-    private IChannel? _outboxChannel;
+    private IChannel? _channel;
 
     public RabbitMQBroker(IConnection connection, IOptions<RabbitMQOptions> options, ILogger<RabbitMQBroker> logger)
     {
@@ -33,7 +29,7 @@ public class RabbitMQBroker : IMessageBroker
     {
         try
         {
-            _outboxChannel ??= await CreateChannel(_options.OutboxExchangeName, cancellationToken);
+            _channel ??= await CreateChannel(cancellationToken);
         }
         catch (BrokerUnreachableException ex)
         {
@@ -44,10 +40,18 @@ public class RabbitMQBroker : IMessageBroker
 
         var failedMessages = (await Task.WhenAll(messages.Select(async message =>
         {
-            var messageBody = JsonSerializer.SerializeToUtf8Bytes(message, _serializerOptions);
+            string exchangeName = message switch
+            {
+                InboxMessage => _options.InboxExchangeName,
+                OutboxMessage => _options.OutboxExchangeName,
+                _ => throw new InvalidOperationException("Unsupported message type.")
+            };
+
+            var messageBody = message.ToJson();
+
             try
             {
-                await _outboxChannel.BasicPublishAsync(_options.OutboxExchangeName, string.Empty, messageBody, cancellationToken);
+                await _channel.BasicPublishAsync(exchangeName, string.Empty, messageBody, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -64,10 +68,11 @@ public class RabbitMQBroker : IMessageBroker
         }
     }
 
-    private async Task<IChannel> CreateChannel(string exchangeName, CancellationToken cancellationToken)
+    private async Task<IChannel> CreateChannel(CancellationToken cancellationToken)
     {
         var channel = await _connection.CreateChannelAsync(null, cancellationToken); //TODO: check options
-        await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct, durable: true, autoDelete: false);
+        await channel.ExchangeDeclareAsync(_options.OutboxExchangeName, ExchangeType.Direct, durable: true, autoDelete: false, cancellationToken: cancellationToken);
+        await channel.ExchangeDeclareAsync(_options.InboxExchangeName, ExchangeType.Direct, durable: true, autoDelete: false, cancellationToken: cancellationToken);
 
         return channel;
     }

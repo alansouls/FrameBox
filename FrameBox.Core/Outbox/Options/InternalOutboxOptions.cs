@@ -5,4 +5,6 @@ internal static class InternalOutboxOptions
     public static int MaxMessagesPerDispatch { get; set; } = 100;
 
     public static TimeSpan DispatchInterval { get; set; } = TimeSpan.FromSeconds(30);
+
+    public static int MaxRetryCount { get; set; } = 3;
 }
