@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\framebox\FrameBox.MessageBroker.RabbitMQ\FrameBox.MessageBroker.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\InboxOutboxSample.Shared\InboxOutboxSample.Shared.csproj" />
     <ProjectReference Include="..\InboxOutboxSample.ServiceDefaults\InboxOutboxSample.ServiceDefaults.csproj" />
   </ItemGroup>

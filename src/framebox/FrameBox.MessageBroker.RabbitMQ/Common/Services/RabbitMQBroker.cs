@@ -29,7 +29,7 @@ public class RabbitMQBroker : IMessageBroker
     {
         try
         {
-            _channel ??= await CreateChannel(cancellationToken);
+            _channel ??= await CreateChannel<T>(cancellationToken);
         }
         catch (BrokerUnreachableException ex)
         {
@@ -40,18 +40,11 @@ public class RabbitMQBroker : IMessageBroker
 
         var failedMessages = (await Task.WhenAll(messages.Select(async message =>
         {
-            string exchangeName = message switch
-            {
-                InboxMessage => _options.InboxExchangeName,
-                OutboxMessage => _options.OutboxExchangeName,
-                _ => throw new InvalidOperationException("Unsupported message type.")
-            };
-
             var messageBody = message.ToJson();
 
             try
             {
-                await _channel.BasicPublishAsync(exchangeName, string.Empty, messageBody, cancellationToken);
+                await _channel.BasicPublishAsync(exchange: string.Empty, routingKey: _options.GetQueueName<T>(), messageBody, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -68,12 +61,10 @@ public class RabbitMQBroker : IMessageBroker
         }
     }
 
-    private async Task<IChannel> CreateChannel(CancellationToken cancellationToken)
+    private async Task<IChannel> CreateChannel<T>(CancellationToken cancellationToken) where T : class, IMessage
     {
         var channel = await _connection.CreateChannelAsync(null, cancellationToken); //TODO: check options
-        await channel.ExchangeDeclareAsync(_options.OutboxExchangeName, ExchangeType.Direct, durable: true, autoDelete: false, cancellationToken: cancellationToken);
-        await channel.ExchangeDeclareAsync(_options.InboxExchangeName, ExchangeType.Direct, durable: true, autoDelete: false, cancellationToken: cancellationToken);
-
+        await channel.QueueDeclareAsync(_options.GetQueueName<T>(), durable: true, autoDelete: false, cancellationToken: cancellationToken);
         return channel;
     }
 }

@@ -78,12 +78,9 @@ internal class RabbitMQListener : IHostedService
             var channel = await connection.CreateChannelAsync(new CreateChannelOptions(publisherConfirmationsEnabled: false, publisherConfirmationTrackingEnabled: false, 
                 consumerDispatchConcurrency: (ushort)options.GetMaxConcurrency<TMessage>()), cancellationToken); //TODO: check options
 
-            var exchangeName = options.GetExchangeName<TMessage>();
             var queueName = options.GetQueueName<TMessage>();
 
-            await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Direct, durable: true, autoDelete: false, cancellationToken: cancellationToken);
             await channel.QueueDeclareAsync(queueName, durable: true, autoDelete: false, cancellationToken: cancellationToken);
-            await channel.QueueBindAsync(queueName, exchangeName, string.Empty, cancellationToken: cancellationToken);
 
             var consumer = new AsyncEventingBasicConsumer(channel);
 
@@ -93,9 +90,10 @@ internal class RabbitMQListener : IHostedService
                 using var messageScope = _serviceProvider.CreateScope();
                 var handler = messageScope.ServiceProvider.GetRequiredService<TMessageHandler>();
                 await handler.HandleMessage(message, eventArgs.CancellationToken);
+                await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false, cancellationToken: CancellationToken.None);
             };
 
-            string consumerTag = await channel.BasicConsumeAsync(queueName, autoAck: true, consumer, cancellationToken);
+            string consumerTag = await channel.BasicConsumeAsync(queueName, autoAck: false, consumer, cancellationToken);
 
             await _listenerCanceledSource.Task;
 

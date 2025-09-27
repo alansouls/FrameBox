@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FrameBox.Storage.EFCore\FrameBox.Storage.EFCore.csproj" />
     <ProjectReference Include="..\InboxOutboxSample.Shared\InboxOutboxSample.Shared.csproj" />
     <ProjectReference Include="..\InboxOutboxSample\InboxOutboxSample.ServiceDefaults\InboxOutboxSample.ServiceDefaults.csproj" />
   </ItemGroup>

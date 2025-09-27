@@ -1,6 +1,7 @@
 ﻿using FrameBox.Core.Common.Entities;
 using FrameBox.Core.Common.Interfaces;
 using FrameBox.Core.Outbox.Interfaces;
+using FrameBox.Core.Outbox.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
@@ -8,7 +9,7 @@ namespace FrameBox.Storage.EFCore.Common.Interceptors;
 
 internal class OutboxMessagesInterceptors : SaveChangesInterceptor
 {
-    private List<IMessage>? _messages = null;
+    private List<OutboxMessage>? _messages = null;
     private readonly IOutboxMessageFactory _messageFactory;
     private readonly IMessageBroker _messageBroker;
 
