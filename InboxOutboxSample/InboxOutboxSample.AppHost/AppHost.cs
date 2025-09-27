@@ -23,4 +23,9 @@ var apiService = builder.AddProject<Projects.InboxOutboxSample_ApiService>("apis
     .WaitForCompletion(migrationsService)
     .WithHttpHealthCheck("/health");
 
+var dashboard = builder.AddProject<Projects.InboxOutboxSample_Dashboard>("dashboard")
+    .WithReference(paymentsDb)
+    .WaitForCompletion(migrationsService)
+    .WithHttpHealthCheck("/health");
+
 builder.Build().Run();

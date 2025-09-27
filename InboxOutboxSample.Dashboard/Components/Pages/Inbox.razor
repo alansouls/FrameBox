@@ -1,0 +1,67 @@
+﻿@page "/inbox/{OutboxId:guid}"
+@using FrameBox.Core.Inbox.Models
+@using Microsoft.EntityFrameworkCore
+@using InboxOutboxSample.Shared.Data
+@attribute [StreamRendering]
+
+<PageTitle>Inbox</PageTitle>
+
+<h1>Inboxes of @OutboxId</h1>
+
+@if (_messages == null)
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Id</th>
+				<th>Handler Name</th>
+				<th>Created At</th>
+				<th>Updated At</th>
+				<th>State</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var message in _messages)
+			{
+				<tr>
+					<td>@message.Id</td>
+					<td>@message.HandlerName</td>
+					<td>@message.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+					<td>@message.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+					<td>@message.State</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+@code {
+	[Parameter]
+	public Guid OutboxId { get; set; }
+
+	[Inject]
+	private MyDbContext Context { get; set; } = default!;
+
+	private List<InboxDto>? _messages = null;
+
+	protected override async Task OnInitializedAsync()
+	{
+		_messages = null;
+
+		var inboxes = await Context.Set<InboxMessage>()
+			.AsNoTracking()
+			.Where(i => i.OutboxMessageId == OutboxId)
+			.OrderByDescending(x => x.UpdatedAt)
+			.Take(100)
+			.ToListAsync();
+
+		_messages = inboxes.Select(x => new InboxDto(x.Id, x.HandlerName, x.State.ToString(), x.CreatedAt, x.UpdatedAt)).ToList();
+	}
+
+	private record InboxDto(Guid Id, string HandlerName, string State, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+}

@@ -75,7 +75,8 @@ internal class RabbitMQListener : IHostedService
             var connection = scope.ServiceProvider.GetRequiredService<IConnection>();
             var options = scope.ServiceProvider.GetRequiredService<IOptions<RabbitMQOptions>>().Value;
 
-            var channel = await connection.CreateChannelAsync(null, cancellationToken); //TODO: check options
+            var channel = await connection.CreateChannelAsync(new CreateChannelOptions(publisherConfirmationsEnabled: false, publisherConfirmationTrackingEnabled: false, 
+                consumerDispatchConcurrency: (ushort)options.GetMaxConcurrency<TMessage>()), cancellationToken); //TODO: check options
 
             var exchangeName = options.GetExchangeName<TMessage>();
             var queueName = options.GetQueueName<TMessage>();

@@ -1,0 +1,99 @@
+﻿@page "/"
+@using FrameBox.Core.Inbox.Models
+@using FrameBox.Core.Outbox.Models
+@using InboxOutboxSample.Shared.Data
+@using Microsoft.EntityFrameworkCore
+@attribute [StreamRendering]
+@rendermode InteractiveServer
+
+<PageTitle>Home</PageTitle>
+
+<h1>Outbox Messages</h1>
+
+<button class="btn btn-info" @onclick="ClearAll">Clear all</button>
+
+@if (_messages == null)
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Id</th>
+				<th>Event Type</th>
+				<th>Created At</th>
+				<th>Updated At</th>
+				<th>State</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var message in _messages)
+			{
+				<tr>
+					<td>@message.Id</td>
+					<td>@message.EventType</td>
+					<td>@message.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+					<td>@message.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+					<td>@message.State</td>
+					<td>
+						<a class="btn btn-info" href="@($"inbox/{message.Id}")">Go to inboxes</a>
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+@code {
+	[Inject]
+	private MyDbContext Context { get; set; } = default!;
+
+	private List<OutboxDto>? _messages = null;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await ReloadMessages();
+	}
+
+	private async Task ReloadMessages()
+	{
+		_messages = null;
+
+		var outboxes = await Context.Set<OutboxMessage>()
+			.AsNoTracking()
+			.OrderByDescending(x => x.UpdatedAt)
+			.Take(100)
+			.ToListAsync();
+
+		_messages = outboxes.Select(x => new OutboxDto
+		{
+			Id = x.Id,
+			CreatedAt = x.CreatedAt,
+			UpdatedAt = x.UpdatedAt,
+			EventType = x.EventType,
+			State = x.State.ToString()
+		}).ToList();
+	}
+
+	private async Task ClearAll()
+	{
+		await Context.Set<OutboxMessage>().ExecuteDeleteAsync();
+		await Context.Set<InboxMessage>().ExecuteDeleteAsync();
+	}
+
+	private class OutboxDto
+	{
+		public Guid Id { get; set; }
+
+		public string EventType { get; set; } = string.Empty;
+
+		public DateTimeOffset CreatedAt { get; set; }
+
+		public DateTimeOffset UpdatedAt { get; set; }
+
+		public string State { get; set; } = string.Empty;
+	}
+}

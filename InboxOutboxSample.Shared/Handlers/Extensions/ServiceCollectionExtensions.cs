@@ -1,4 +1,5 @@
 ﻿using FrameBox.Core.Events.Interfaces;
+using FrameBox.Core.Extensions;
 using InboxOutboxSample.ApiService.Domain;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,13 +9,7 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddHandlers(this IServiceCollection serviceCollection)
     {
-        serviceCollection
-            .AddScoped<PaymentCreatedHandler>()
-            .AddScoped<IEventHandler<PaymentCreatedEvent>, PaymentCreatedHandler>(provider => provider.GetRequiredService<PaymentCreatedHandler>());
-
-        serviceCollection
-            .AddScoped<LongRunningHandler>()
-            .AddScoped<IEventHandler<PaymentCreatedEvent>, LongRunningHandler>(provider => provider.GetRequiredService<LongRunningHandler>());
+        serviceCollection.AddEventHandlersFromAssemblyContaining<PaymentCreatedHandler>();
 
         return serviceCollection;
     }
