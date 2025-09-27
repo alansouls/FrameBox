@@ -8,8 +8,14 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddHandlers(this IServiceCollection serviceCollection)
     {
-        return serviceCollection
+        serviceCollection
             .AddScoped<PaymentCreatedHandler>()
             .AddScoped<IEventHandler<PaymentCreatedEvent>, PaymentCreatedHandler>(provider => provider.GetRequiredService<PaymentCreatedHandler>());
+
+        serviceCollection
+            .AddScoped<LongRunningHandler>()
+            .AddScoped<IEventHandler<PaymentCreatedEvent>, LongRunningHandler>(provider => provider.GetRequiredService<LongRunningHandler>());
+
+        return serviceCollection;
     }
 }
