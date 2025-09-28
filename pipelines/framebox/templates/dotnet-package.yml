@@ -1,0 +1,89 @@
+name: Build and Test .NET Package
+
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        required: true
+        type: string
+        description: 'Path to the project file (e.g., src/framebox/FrameBox.Core/FrameBox.Core.csproj)'
+      package-name:
+        required: true
+        type: string
+        description: 'Name of the package (e.g., FrameBox.Core)'
+      dotnet-version:
+        required: false
+        type: string
+        default: '9.0.x'
+        description: 'Version of .NET to use'
+      run-tests:
+        required: false
+        type: boolean
+        default: false
+        description: 'Whether to run tests for this package'
+      test-project-path:
+        required: false
+        type: string
+        description: 'Path to the test project if tests should be run'
+    secrets:
+      NUGET_API_KEY:
+        required: false
+        description: 'NuGet API key for publishing packages'
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+        
+    - name: Cache .NET packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+          
+    - name: Restore dependencies
+      run: dotnet restore ${{ inputs.project-path }}
+      
+    - name: Build package
+      run: dotnet build ${{ inputs.project-path }} --configuration Release --no-restore
+      
+    - name: Run tests
+      if: ${{ inputs.run-tests == true && inputs.test-project-path != '' }}
+      run: dotnet test ${{ inputs.test-project-path }} --configuration Release --no-build --verbosity normal --logger trx --results-directory TestResults/
+      
+    - name: Publish test results
+      if: ${{ inputs.run-tests == true && inputs.test-project-path != '' && (success() || failure()) }}
+      uses: dorny/test-reporter@v1
+      with:
+        name: ${{ inputs.package-name }} Test Results
+        path: TestResults/*.trx
+        reporter: dotnet-trx
+        
+    - name: Create NuGet package
+      run: dotnet pack ${{ inputs.project-path }} --configuration Release --no-build --output ./packages
+      
+    - name: Upload package artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.package-name }}-package
+        path: ./packages/*.nupkg
+        retention-days: 30
+        
+    - name: Publish to NuGet (on main branch)
+      if: github.ref == 'refs/heads/main' && secrets.NUGET_API_KEY != ''
+      run: dotnet nuget push ./packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
