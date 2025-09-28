@@ -90,5 +90,9 @@ jobs:
         retention-days: 30
         
     - name: Publish to NuGet (on main branch)
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/main' && secrets.NUGET_API_KEY != ''
       run: dotnet nuget push ./packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      
+    - name: Skip NuGet publish (API key not configured)
+      if: github.ref == 'refs/heads/main' && secrets.NUGET_API_KEY == ''
+      run: echo "⚠️ Skipping NuGet publish - NUGET_API_KEY secret not configured"
