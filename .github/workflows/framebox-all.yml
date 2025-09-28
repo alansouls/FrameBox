@@ -22,6 +22,11 @@ on:
     # Run nightly at 2 AM UTC to catch any dependency issues
     - cron: '0 2 * * *'
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_NOLOGO: true

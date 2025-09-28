@@ -30,6 +30,11 @@ on:
         required: false
         description: 'NuGet API key for publishing packages'
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_NOLOGO: true
@@ -85,5 +90,5 @@ jobs:
         retention-days: 30
         
     - name: Publish to NuGet (on main branch)
-      if: github.ref == 'refs/heads/main' && secrets.NUGET_API_KEY != ''
+      if: github.ref == 'refs/heads/main' && secrets.NUGET_API_KEY
       run: dotnet nuget push ./packages/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
