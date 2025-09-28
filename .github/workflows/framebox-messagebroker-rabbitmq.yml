@@ -34,5 +34,6 @@ jobs:
       package-name: 'FrameBox.MessageBroker.RabbitMQ'
       dotnet-version: '9.0.x'
       run-tests: false  # No tests currently exist
+      force-publish: ${{ inputs.force-publish || false }}
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

@@ -41,6 +41,7 @@ jobs:
       package-name: 'FrameBox.Core'
       dotnet-version: '9.0.x'
       run-tests: false
+      force-publish: ${{ inputs.force-publish || false }}
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
@@ -51,6 +52,7 @@ jobs:
       package-name: 'FrameBox.Storage.EFCore'
       dotnet-version: '9.0.x'
       run-tests: false
+      force-publish: ${{ inputs.force-publish || false }}
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
@@ -61,6 +63,7 @@ jobs:
       package-name: 'FrameBox.MessageBroker.RabbitMQ'
       dotnet-version: '9.0.x'
       run-tests: false
+      force-publish: ${{ inputs.force-publish || false }}
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
