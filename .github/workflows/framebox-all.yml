@@ -1,0 +1,125 @@
+name: FrameBox All Packages Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/framebox/**'
+      - 'pipelines/framebox/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/framebox/**'
+      - 'pipelines/framebox/**'
+  workflow_dispatch:
+    inputs:
+      force-publish:
+        description: 'Force publish to NuGet even on non-main branch'
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    # Run nightly at 2 AM UTC to catch any dependency issues
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  # Build and test all packages in parallel
+  framebox-core:
+    uses: ./.github/workflows/dotnet-package.yml
+    with:
+      project-path: 'src/framebox/FrameBox.Core/FrameBox.Core.csproj'
+      package-name: 'FrameBox.Core'
+      dotnet-version: '9.0.x'
+      run-tests: false
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+  framebox-storage:
+    uses: ./.github/workflows/dotnet-package.yml
+    with:
+      project-path: 'src/framebox/FrameBox.Storage.EFCore/FrameBox.Storage.EFCore.csproj'
+      package-name: 'FrameBox.Storage.EFCore'
+      dotnet-version: '9.0.x'
+      run-tests: false
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+  framebox-messagebroker:
+    uses: ./.github/workflows/dotnet-package.yml
+    with:
+      project-path: 'src/framebox/FrameBox.MessageBroker.RabbitMQ/FrameBox.MessageBroker.RabbitMQ.csproj'
+      package-name: 'FrameBox.MessageBroker.RabbitMQ'
+      dotnet-version: '9.0.x'
+      run-tests: false
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+  # Integration test that builds the entire solution to ensure packages work together
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: [framebox-core, framebox-storage, framebox-messagebroker]
+    if: always() && (needs.framebox-core.result == 'success' || needs.framebox-storage.result == 'success' || needs.framebox-messagebroker.result == 'success')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Cache .NET packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('src/framebox/**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+          
+    - name: Restore solution
+      run: dotnet restore src/framebox/Framebox.sln
+      
+    - name: Build entire solution
+      run: dotnet build src/framebox/Framebox.sln --configuration Release --no-restore
+      
+    - name: Pack all packages
+      run: dotnet pack src/framebox/Framebox.sln --configuration Release --no-build --output ./all-packages
+      
+    - name: Upload all packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: framebox-all-packages
+        path: ./all-packages/*.nupkg
+        retention-days: 30
+
+  # Report overall status
+  status-report:
+    runs-on: ubuntu-latest
+    needs: [framebox-core, framebox-storage, framebox-messagebroker, integration-test]
+    if: always()
+    
+    steps:
+    - name: Report Success
+      if: needs.framebox-core.result == 'success' && needs.framebox-storage.result == 'success' && needs.framebox-messagebroker.result == 'success' && needs.integration-test.result == 'success'
+      run: echo "All FrameBox packages built and tested successfully!"
+      
+    - name: Report Failure
+      if: needs.framebox-core.result == 'failure' || needs.framebox-storage.result == 'failure' || needs.framebox-messagebroker.result == 'failure' || needs.integration-test.result == 'failure'
+      run: |
+        echo "Some FrameBox packages failed to build:"
+        echo "FrameBox.Core: ${{ needs.framebox-core.result }}"
+        echo "FrameBox.Storage.EFCore: ${{ needs.framebox-storage.result }}"
+        echo "FrameBox.MessageBroker.RabbitMQ: ${{ needs.framebox-messagebroker.result }}"
+        echo "Integration Test: ${{ needs.integration-test.result }}"
+        exit 1

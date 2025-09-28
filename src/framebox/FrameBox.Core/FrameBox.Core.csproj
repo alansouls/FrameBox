@@ -4,6 +4,21 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- Package Information -->
+    <PackageId>FrameBox.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>alansouls</Authors>
+    <Description>Core library for FrameBox framework providing event handling, inbox/outbox patterns, and domain event management.</Description>
+    <PackageTags>framebox;events;domain-events;cqrs;messaging;outbox;inbox</PackageTags>
+    <RepositoryUrl>https://github.com/alansouls/FrameBox</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/alansouls/FrameBox</PackageProjectUrl>
+    
+    <!-- Generate package metadata -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>

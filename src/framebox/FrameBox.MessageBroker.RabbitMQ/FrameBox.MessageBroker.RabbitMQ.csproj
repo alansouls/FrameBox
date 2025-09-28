@@ -4,6 +4,21 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- Package Information -->
+    <PackageId>FrameBox.MessageBroker.RabbitMQ</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>alansouls</Authors>
+    <Description>RabbitMQ message broker implementation for FrameBox providing reliable message publishing and consumption.</Description>
+    <PackageTags>framebox;rabbitmq;messagebroker;messaging;amqp;publisher;consumer</PackageTags>
+    <RepositoryUrl>https://github.com/alansouls/FrameBox</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/alansouls/FrameBox</PackageProjectUrl>
+    
+    <!-- Generate package metadata -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>

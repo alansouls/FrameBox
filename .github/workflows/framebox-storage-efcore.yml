@@ -1,0 +1,38 @@
+name: FrameBox.Storage.EFCore Package Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/framebox/FrameBox.Storage.EFCore/**'
+      - 'pipelines/framebox/framebox-storage-efcore.yml'
+      - 'pipelines/framebox/templates/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/framebox/FrameBox.Storage.EFCore/**'
+      - 'pipelines/framebox/framebox-storage-efcore.yml'
+      - 'pipelines/framebox/templates/**'
+  workflow_dispatch:
+    inputs:
+      force-publish:
+        description: 'Force publish to NuGet even on non-main branch'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  build-and-test:
+    uses: ./.github/workflows/dotnet-package.yml
+    with:
+      project-path: 'src/framebox/FrameBox.Storage.EFCore/FrameBox.Storage.EFCore.csproj'
+      package-name: 'FrameBox.Storage.EFCore'
+      dotnet-version: '9.0.x'
+      run-tests: false  # No tests currently exist
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
