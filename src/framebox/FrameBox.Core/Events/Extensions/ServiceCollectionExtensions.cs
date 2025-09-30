@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
     {
         services.TryAddSingleton<IDomainEventSerializer, JsonDomainEventSerializer>();
         services.TryAddScoped<IEventHandlerProvider, DefaultEventHandlerProvider>();
+        services.TryAddScoped<IEventDispatcher, DefaultEventDispatcher>();
 
         return services;
     }

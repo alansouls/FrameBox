@@ -5,5 +5,5 @@ namespace FrameBox.Core.Outbox.Interfaces;
 
 public interface IOutboxMessageFactory
 {
-    ValueTask<OutboxMessage> CreateAsync(IDomainEvent domainEvent, CancellationToken cancellationToken);
+    ValueTask<OutboxMessage> CreateAsync(IEvent domainEvent, CancellationToken cancellationToken);
 }

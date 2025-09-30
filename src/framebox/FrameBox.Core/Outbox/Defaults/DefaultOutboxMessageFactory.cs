@@ -16,7 +16,7 @@ internal class DefaultOutboxMessageFactory : IOutboxMessageFactory
         _domainEventSerializer = domainEventSerializer;
     }
 
-    public async ValueTask<OutboxMessage> CreateAsync(IDomainEvent domainEvent, CancellationToken cancellationToken)
+    public async ValueTask<OutboxMessage> CreateAsync(IEvent domainEvent, CancellationToken cancellationToken)
     {
         var eventPayload = await _domainEventSerializer.SerializeAsync(domainEvent, cancellationToken);
 

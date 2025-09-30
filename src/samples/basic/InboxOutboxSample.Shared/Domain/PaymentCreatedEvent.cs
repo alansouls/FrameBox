@@ -1,10 +1,9 @@
-﻿using FrameBox.Core.Events.Interfaces;
+﻿using FrameBox.Core.Events.Defaults;
+using FrameBox.Core.Events.Interfaces;
 
 namespace InboxOutboxSample.ApiService.Domain;
 
-public record PaymentCreatedEvent(Guid PaymentId, decimal Amount) : IDomainEvent
+public record PaymentCreatedEvent(Guid PaymentId, decimal Amount) : FrameEvent
 {
-    public Guid Id => PaymentId;
-
-    public DateTimeOffset RaisedAt { get; init; } = DateTimeOffset.UtcNow;
+    public override Guid Id => PaymentId;
 }

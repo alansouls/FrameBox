@@ -15,7 +15,7 @@ public class DefaultInboxMessageFactory : IInboxMessageFactory
         _timeProvider = timeProvider;
     }
 
-    public IEnumerable<InboxMessage> CreateMessages(IDomainEvent @event)
+    public IEnumerable<InboxMessage> CreateMessages(IEvent @event)
     {
         var handlers = _eventHandlerProvider.GetEventHandlerTypes(@event.GetType());
 

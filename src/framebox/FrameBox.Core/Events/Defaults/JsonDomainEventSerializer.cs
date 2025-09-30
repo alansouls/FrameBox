@@ -13,7 +13,7 @@ internal class JsonDomainEventSerializer : IDomainEventSerializer
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
     };
 
-    public ValueTask<Result<T>> DeserializeAsync<T>(string serializedDomainEvent, CancellationToken cancellationToken) where T : IDomainEvent
+    public ValueTask<Result<T>> DeserializeAsync<T>(string serializedDomainEvent, CancellationToken cancellationToken) where T : IEvent
     {
         if (string.IsNullOrWhiteSpace(serializedDomainEvent))
         {
@@ -36,11 +36,11 @@ internal class JsonDomainEventSerializer : IDomainEventSerializer
         }
     }
 
-    public ValueTask<Result<IDomainEvent>> DeserializeAsync(string serializedDomainEvent, Type domainEventType, CancellationToken cancellationToken)
+    public ValueTask<Result<IEvent>> DeserializeAsync(string serializedDomainEvent, Type domainEventType, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(serializedDomainEvent))
         {
-            return ValueTask.FromResult<Result<IDomainEvent>>(Result.Error("Serialized domain event cannot be null or empty."));
+            return ValueTask.FromResult<Result<IEvent>>(Result.Error("Serialized domain event cannot be null or empty."));
         }
         try
         {
@@ -48,18 +48,18 @@ internal class JsonDomainEventSerializer : IDomainEventSerializer
 
             if (domainEvent == null)
             {
-                return ValueTask.FromResult<Result<IDomainEvent>>(Result.CriticalError("Deserialized domain event is null."));
+                return ValueTask.FromResult<Result<IEvent>>(Result.CriticalError("Deserialized domain event is null."));
             }
 
-            return ValueTask.FromResult(Result.Success((domainEvent as IDomainEvent)!));
+            return ValueTask.FromResult(Result.Success((domainEvent as IEvent)!));
         }
         catch (JsonException ex)
         {
-            return ValueTask.FromResult<Result<IDomainEvent>>(Result.Error($"Failed to deserialize domain event: {ex.Message}"));
+            return ValueTask.FromResult<Result<IEvent>>(Result.Error($"Failed to deserialize domain event: {ex.Message}"));
         }
     }
 
-    public ValueTask<string> SerializeAsync(IDomainEvent domainEvent, CancellationToken cancellationToken)
+    public ValueTask<string> SerializeAsync(IEvent domainEvent, CancellationToken cancellationToken)
     {
         if (domainEvent == null)
         {

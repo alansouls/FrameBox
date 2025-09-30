@@ -2,10 +2,10 @@
 
 public interface IEventHandler
 {
-    Task HandleAsync(IDomainEvent @event, CancellationToken cancellationToken);
+    Task HandleAsync(IEvent @event, CancellationToken cancellationToken);
 }
 
-public interface IEventHandler<TEvent> : IEventHandler where TEvent : IDomainEvent
+public interface IEventHandler<TEvent> : IEventHandler where TEvent : IEvent
 {
     Task HandleAsync(TEvent @event, CancellationToken cancellationToken);
 }

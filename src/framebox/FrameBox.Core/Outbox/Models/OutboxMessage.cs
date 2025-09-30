@@ -111,7 +111,7 @@ public class OutboxMessage : IMessage
         return Result.Success();
     }
 
-    public async Task<IDomainEvent> ToDomainEvent(IDomainEventSerializer domainEventSerializer, CancellationToken cancellationToken)
+    public async Task<IEvent> ToDomainEvent(IDomainEventSerializer domainEventSerializer, CancellationToken cancellationToken)
     {
         var eventType = System.Type.GetType(EventType) ?? throw new InvalidOperationException("Type not found!");
         var result = await domainEventSerializer.DeserializeAsync(Payload, eventType, cancellationToken);

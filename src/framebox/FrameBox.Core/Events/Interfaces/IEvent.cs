@@ -1,6 +1,6 @@
 ﻿namespace FrameBox.Core.Events.Interfaces;
 
-public interface IDomainEvent
+public interface IEvent
 {
     Guid Id { get; }
     DateTimeOffset RaisedAt { get; }

@@ -5,5 +5,5 @@ namespace FrameBox.Core.Inbox.Interfaces;
 
 public interface IInboxMessageFactory
 {
-    IEnumerable<InboxMessage> CreateMessages(IDomainEvent @event);
+    IEnumerable<InboxMessage> CreateMessages(IEvent @event);
 }

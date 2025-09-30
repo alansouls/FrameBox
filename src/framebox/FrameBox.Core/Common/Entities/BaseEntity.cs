@@ -4,11 +4,11 @@ namespace FrameBox.Core.Common.Entities;
 
 public abstract class BaseEntity
 {
-    private readonly List<IDomainEvent> _events = [];
+    private readonly List<IEvent> _events = [];
 
-    public IReadOnlyList<IDomainEvent> Events => _events.AsReadOnly();
+    public IReadOnlyList<IEvent> Events => _events.AsReadOnly();
 
-    public List<IDomainEvent> ConsumeEvents()
+    public List<IEvent> ConsumeEvents()
     {
         var consumedEvents = _events.ToList();
         _events.Clear();
@@ -16,7 +16,7 @@ public abstract class BaseEntity
         return consumedEvents;
     }
 
-    protected void RaiseEvent(IDomainEvent domainEvent)
+    protected void RaiseEvent(IEvent domainEvent)
     {
         _events.Add(domainEvent);
     }
