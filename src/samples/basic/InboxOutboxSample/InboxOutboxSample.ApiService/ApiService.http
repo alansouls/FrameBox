@@ -1,0 +1,9 @@
+### GET request to example server
+POST http://localhost:5483/api/v1/payments
+Content-Type: application/json
+
+{
+    "amount": 100
+}
+
+###

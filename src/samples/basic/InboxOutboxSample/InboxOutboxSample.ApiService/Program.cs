@@ -1,8 +1,10 @@
+using FrameBox.Core.Events.Interfaces;
 using FrameBox.Core.Extensions;
 using FrameBox.MessageBroker.RabbitMQ.Common.Extensions;
 using FrameBox.Storage.EFCore.Common.Extensions;
 using InboxOutboxSample.ApiService.Domain;
 using InboxOutboxSample.Shared.Data;
+using InboxOutboxSample.Shared.Domain;
 using InboxOutboxSample.Shared.Handlers.Extensions;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,17 +50,22 @@ var v1 = api.MapGroup("v1");
 
 var payments = v1.MapGroup("payments");
 
-payments.MapPost("/", async (CreatePayment dto, MyDbContext context, CancellationToken cancellationToken) =>
-{
-    var payment = new Payment(dto.Amount);
+payments.MapPost("/", async (CreatePayment dto, MyDbContext context,
+        IEventDispatcher eventDispatcher,
+        CancellationToken cancellationToken) =>
+    {
+        var payment = new Payment(dto.Amount);
 
-    await context.AddAsync(payment, cancellationToken);
+        await context.AddAsync(payment, cancellationToken);
 
-    await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
 
-    return Results.Created($"/api/v1/payments/{payment.Id}", payment);
-})
-.WithName("CreatePayment");
+        await eventDispatcher.DispatchAsync([new NonDomainEvent("Hi from payment endpoint")],
+            cancellationToken);
+
+        return Results.Created($"/api/v1/payments/{payment.Id}", payment);
+    })
+    .WithName("CreatePayment");
 
 app.MapDefaultEndpoints();
 app.Run();

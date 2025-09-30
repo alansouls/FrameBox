@@ -17,9 +17,11 @@ internal class InboxDbContextStorage : IInboxStorage
         _timeProvider = timeProvider;
     }
 
-    public Task AddMessagesAsync(IEnumerable<InboxMessage> messages, CancellationToken cancellationToken = default)
+    public async Task AddMessagesAsync(IEnumerable<InboxMessage> messages, CancellationToken cancellationToken = default)
     {
-        return _dbContextWrapper.Context.AddRangeAsync(messages, cancellationToken);
+        await _dbContextWrapper.Context.AddRangeAsync(messages, cancellationToken);
+        
+        await _dbContextWrapper.Context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateMessagesAsync(IEnumerable<InboxMessage> messages, CancellationToken cancellationToken = default)

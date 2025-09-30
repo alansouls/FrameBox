@@ -7,7 +7,7 @@ namespace FrameBox.Core.Events.Defaults;
 /// </summary>
 public abstract record FrameEvent : IEvent
 {
-    public virtual Guid Id { get; protected set; } = Guid.NewGuid();
+    public virtual Guid Id { get; init; } = Guid.NewGuid();
 
     public virtual DateTimeOffset RaisedAt { get; init; } = DateTimeOffset.UtcNow;
 }

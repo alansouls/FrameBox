@@ -17,9 +17,11 @@ internal class OutboxDbContextStorage : IOutboxStorage
         _timeProvider = timeProvider;
     }
 
-    public Task AddMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default)
+    public async Task AddMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default)
     {
-        return _dbContextWrapper.Context.AddRangeAsync(messages, cancellationToken);
+        await _dbContextWrapper.Context.AddRangeAsync(messages, cancellationToken);
+
+        await _dbContextWrapper.Context.SaveChangesAsync(cancellationToken);
     }
 
     public Task<OutboxMessage?> GetMessageByIdAsync(Guid messageId, CancellationToken cancellationToken = default)
