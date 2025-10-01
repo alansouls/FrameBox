@@ -1,5 +1,4 @@
 ﻿using FrameBox.Core.Events.Defaults;
-using FrameBox.Core.Events.Interfaces;
 
 namespace InboxOutboxSample.ApiService.Domain;
 

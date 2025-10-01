@@ -23,6 +23,8 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
+        _messages = null;
+
         if (eventData.Context is null)
         {
             return await base.SavingChangesAsync(eventData, result, cancellationToken);
