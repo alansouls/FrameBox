@@ -8,6 +8,8 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
 using System.Text.Json;
+using FrameBox.MessageBroker.RabbitMQ.Common.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FrameBox.MessageBroker.RabbitMQ.Common.Services;
 
@@ -17,19 +19,23 @@ public class RabbitMQBroker : IMessageBroker
     private readonly RabbitMQOptions _options;
     private readonly ILogger<RabbitMQBroker> _logger;
     private IChannel? _channel;
+    private readonly IServiceProvider _serviceProvider;
 
-    public RabbitMQBroker(IConnection connection, IOptions<RabbitMQOptions> options, ILogger<RabbitMQBroker> logger)
+    public RabbitMQBroker(IConnection connection, IOptions<RabbitMQOptions> options, ILogger<RabbitMQBroker> logger, IServiceProvider serviceProvider)
     {
         _connection = connection;
         _options = options.Value;
         _logger = logger;
+        _serviceProvider = serviceProvider;
     }
 
-    public async Task SendMessagesAsync<T>(IEnumerable<T> messages, CancellationToken cancellationToken) where T : class, IMessage
+    public async Task SendMessagesAsync<T>(IEnumerable<T> messages, CancellationToken cancellationToken)
+        where T : class, IMessage
     {
+        var exchangeName = _options.GetExchangeName<T>();
         try
         {
-            _channel ??= await CreateChannel<T>(cancellationToken);
+            _channel ??= await CreateChannel(exchangeName, cancellationToken);
         }
         catch (BrokerUnreachableException ex)
         {
@@ -37,14 +43,19 @@ public class RabbitMQBroker : IMessageBroker
 
             throw new FailedToSendMessagesException<T>(messages, ex);
         }
+        
+        var routingKeyFactory = _serviceProvider.GetRequiredService<IRoutingKeyFactory<T>>();
 
         var failedMessages = (await Task.WhenAll(messages.Select(async message =>
         {
             var messageBody = message.ToJson();
+            
+            var routingKey = routingKeyFactory.CreateRoutingKey(message);
 
             try
             {
-                await _channel.BasicPublishAsync(exchange: string.Empty, routingKey: _options.GetQueueName<T>(), messageBody, cancellationToken);
+                await _channel.BasicPublishAsync(exchange: exchangeName, routingKey,
+                    messageBody, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -61,10 +72,16 @@ public class RabbitMQBroker : IMessageBroker
         }
     }
 
-    private async Task<IChannel> CreateChannel<T>(CancellationToken cancellationToken) where T : class, IMessage
+    private async Task<IChannel> CreateChannel(string exchangeName, CancellationToken cancellationToken)
     {
         var channel = await _connection.CreateChannelAsync(null, cancellationToken); //TODO: check options
-        await channel.QueueDeclareAsync(_options.GetQueueName<T>(), durable: true, autoDelete: false, cancellationToken: cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(exchangeName))
+        {
+            await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Topic, durable: true,
+                cancellationToken: cancellationToken);
+        }
+
         return channel;
     }
 }
