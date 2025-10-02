@@ -1,5 +1,6 @@
 ﻿using FrameBox.Core.Common.Entities;
 using FrameBox.Core.Common.Interfaces;
+using FrameBox.Core.EventContexts.Interfaces;
 using FrameBox.Core.Outbox.Interfaces;
 using FrameBox.Core.Outbox.Models;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -12,15 +13,19 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
     private List<OutboxMessage>? _messages = null;
     private readonly IOutboxMessageFactory _messageFactory;
     private readonly IMessageBroker _messageBroker;
-    private TimeProvider _timeProvider;
+    private readonly TimeProvider _timeProvider;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IEventContextManager _eventContextManager;
 
-    public OutboxMessagesInterceptors(IOutboxMessageFactory messageFactory, IMessageBroker messageBroker, TimeProvider timeProvider, IServiceProvider serviceProvider)
+    public OutboxMessagesInterceptors(IOutboxMessageFactory messageFactory, IMessageBroker messageBroker,
+        IEventContextManager eventContextManager,
+        TimeProvider timeProvider, IServiceProvider serviceProvider)
     {
         _messageFactory = messageFactory;
         _messageBroker = messageBroker;
         _timeProvider = timeProvider;
         _serviceProvider = serviceProvider;
+        _eventContextManager = eventContextManager;
     }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
@@ -46,6 +51,16 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
             return await base.SavingChangesAsync(eventData, result, cancellationToken);
         }
 
+        var eventContexts = (await _eventContextManager.CaptureContextsAsync(events, cancellationToken))
+            .ToList();
+
+        if (eventContexts.Count > 0)
+        {
+            using var eventContextScope = _serviceProvider.CreateScope();
+            var scopedEventContextStorage = eventContextScope.ServiceProvider.GetRequiredService<IEventContextStorage>();
+            await scopedEventContextStorage.AddAsync(eventContexts, cancellationToken);
+        }
+
         var sendingDate = _timeProvider.GetUtcNow();
 
         var messages = await Task.WhenAll(events.Select(async e =>
@@ -67,7 +82,8 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
         return Task.Run(async () => await SavingChangesAsync(eventData, result)).GetAwaiter().GetResult();
     }
 
-    public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result, CancellationToken cancellationToken = default)
+    public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result,
+        CancellationToken cancellationToken = default)
     {
         if ((_messages ?? []).Count != 0)
         {

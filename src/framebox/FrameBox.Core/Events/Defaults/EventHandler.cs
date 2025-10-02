@@ -1,4 +1,5 @@
-﻿using FrameBox.Core.Events.Interfaces;
+﻿using FrameBox.Core.EventContexts.Interfaces;
+using FrameBox.Core.Events.Interfaces;
 
 namespace FrameBox.Core.Events.Defaults;
 
@@ -6,6 +7,8 @@ public abstract class EventHandler<TDomainEvent> : IEventHandler<TDomainEvent> w
 {
     public abstract Task HandleAsync(TDomainEvent @event, CancellationToken cancellationToken);
 
-    public Task HandleAsync(IEvent @event, CancellationToken cancellationToken)
-         => HandleAsync((TDomainEvent)@event ?? throw new InvalidOperationException("Invalid domain event for this handler"), cancellationToken);
+    public async Task HandleAsync(IEvent @event, CancellationToken cancellationToken)
+    {
+        await HandleAsync((TDomainEvent)@event ?? throw new InvalidOperationException("Invalid domain event for this handler"), cancellationToken);
+    }
 }

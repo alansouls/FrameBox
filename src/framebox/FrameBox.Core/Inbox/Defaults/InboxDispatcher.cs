@@ -15,7 +15,6 @@ namespace FrameBox.Core.Inbox.Defaults;
 
 internal class InboxDispatcher : IInboxDispatcher, IHostedService
 {
-    private readonly TimeProvider _timeProvider;
     private readonly PeriodicTimer _timer;
     private readonly CancellationTokenSource _timerCancellationTokenSource;
     private readonly IServiceProvider _serviceProvider;
@@ -28,7 +27,6 @@ internal class InboxDispatcher : IInboxDispatcher, IHostedService
         _timerCancellationTokenSource = new CancellationTokenSource();
         _serviceProvider = serviceProvider;
         _logger = logger;
-        _timeProvider = timeProvider;
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -82,13 +80,15 @@ internal class InboxDispatcher : IInboxDispatcher, IHostedService
             var messageBroker = scope.ServiceProvider.GetRequiredService<IMessageBroker>();
             var messages = await inboxStorage.GetMessagesReadyToSendAsync(InternalInboxOptions.MaxInboxMessagesToProcess, cancellationToken);
 
-            if (!messages.Any())
+            var inboxMessages = messages.ToList();
+            
+            if (inboxMessages.Count == 0)
             {
                 return;
             }
 
-            await inboxStorage.UpdateMessagesAsync(messages, cancellationToken);
-            await messageBroker.SendMessagesAsync(messages, cancellationToken);
+            await inboxStorage.UpdateMessagesAsync(inboxMessages, cancellationToken);
+            await messageBroker.SendMessagesAsync(inboxMessages, cancellationToken);
         }
         finally
         {
@@ -99,39 +99,5 @@ internal class InboxDispatcher : IInboxDispatcher, IHostedService
     public void RunNow()
     {
         _ = Task.Run(async () => await DispatchMessagesAsync(CancellationToken.None));
-    }
-
-    private async Task HandleMessage(InboxMessage message, IEventHandlerProvider eventHandlerProvider, IOutboxStorage outboxStorage,
-        IDomainEventSerializer serializer, CancellationToken cancellationToken)
-    {
-        var outboxMessage = await outboxStorage.GetMessageByIdAsync(message.OutboxMessageId, cancellationToken);
-
-        if (outboxMessage is null)
-        {
-            _logger.LogWarning("Outbox messages with ID {OutboxMessageId} not found for inbox messages {InboxMessageId}. Skipping.",
-                message.OutboxMessageId, message.Id);
-
-            return;
-        }
-
-        try
-        {
-            var domainEvent = await outboxMessage.ToDomainEvent(serializer, cancellationToken);
-            var handler = eventHandlerProvider.GetEventHandler(message.HandlerName);
-            await handler.HandleAsync(domainEvent, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to process inbox messages {InboxMessageId} linked to outbox messages {OutboxMessageId}.",
-                message.Id, message.OutboxMessageId);
-
-            var messagePayload = JsonSerializer.Serialize(new
-            {
-                ex.Message,
-                ex.StackTrace
-            });
-
-            message.Fail(messagePayload, _timeProvider.GetUtcNow());
-        }
     }
 }
