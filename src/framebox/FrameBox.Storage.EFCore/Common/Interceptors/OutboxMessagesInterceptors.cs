@@ -1,5 +1,6 @@
 ﻿using FrameBox.Core.Common.Entities;
 using FrameBox.Core.Common.Interfaces;
+using FrameBox.Core.EventContexts.Interfaces;
 using FrameBox.Core.Outbox.Interfaces;
 using FrameBox.Core.Outbox.Models;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -14,13 +15,16 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
     private readonly IMessageBroker _messageBroker;
     private TimeProvider _timeProvider;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IEventContextManager _eventContextManager;
 
-    public OutboxMessagesInterceptors(IOutboxMessageFactory messageFactory, IMessageBroker messageBroker, TimeProvider timeProvider, IServiceProvider serviceProvider)
+    public OutboxMessagesInterceptors(IOutboxMessageFactory messageFactory, IMessageBroker messageBroker,
+        IEventContextManager eventContextManager, TimeProvider timeProvider, IServiceProvider serviceProvider)
     {
         _messageFactory = messageFactory;
         _messageBroker = messageBroker;
         _timeProvider = timeProvider;
         _serviceProvider = serviceProvider;
+        _eventContextManager = eventContextManager;
     }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
@@ -46,6 +50,7 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
             return await base.SavingChangesAsync(eventData, result, cancellationToken);
         }
 
+        await _eventContextManager.CaptureContextsAsync(events, cancellationToken);
         var sendingDate = _timeProvider.GetUtcNow();
 
         var messages = await Task.WhenAll(events.Select(async e =>
@@ -67,7 +72,8 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
         return Task.Run(async () => await SavingChangesAsync(eventData, result)).GetAwaiter().GetResult();
     }
 
-    public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result, CancellationToken cancellationToken = default)
+    public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result,
+        CancellationToken cancellationToken = default)
     {
         if ((_messages ?? []).Count != 0)
         {

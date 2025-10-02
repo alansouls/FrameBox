@@ -1,8 +1,10 @@
+using FrameBox.Core.EventContexts.Extensions;
 using FrameBox.Core.Events.Interfaces;
 using FrameBox.Core.Extensions;
 using FrameBox.MessageBroker.RabbitMQ.Common.Extensions;
 using FrameBox.Storage.EFCore.Common.Extensions;
 using InboxOutboxSample.ApiService.Domain;
+using InboxOutboxSample.ApiService.EventContextFeeder;
 using InboxOutboxSample.Shared.Data;
 using InboxOutboxSample.Shared.Domain;
 using InboxOutboxSample.Shared.Handlers.Extensions;
@@ -19,7 +21,10 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddFrameBoxCore();
+builder.Services.AddFrameBoxCore(configureEventContextFactoryRegistry: registryBuilder =>
+{
+    registryBuilder.AddFeeder<RequestIpContextFeeder>();
+});
 builder.Services.AddOutboxEntityFrameworkCoreStorage<MyDbContext>();
 builder.Services.AddInboxEntityFrameworkCoreStorage<MyDbContext>();
 builder.Services.AddRabbitMQMessageBroker(builder.Configuration);
