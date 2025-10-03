@@ -42,10 +42,13 @@ internal class OutboxDispatcher : IOutboxDispatcher, IHostedService
             var outboxStorage = scope.ServiceProvider.GetRequiredService<IOutboxStorage>();
             var messageBroker = scope.ServiceProvider.GetRequiredService<IMessageBroker>();
             var messages = await outboxStorage.GetMessagesToSendAsync(InternalOutboxOptions.MaxMessagesPerDispatch, cancellationToken);
-            
+
+            List<OutboxMessage> sentMessages;
+
             try
             {
                 await messageBroker.SendMessagesAsync(messages, cancellationToken);
+                sentMessages = messages.ToList();
             }
             catch (FailedToSendMessagesException<OutboxMessage> ex)
             {
@@ -53,10 +56,15 @@ internal class OutboxDispatcher : IOutboxDispatcher, IHostedService
 
                 foreach (var message in ex.FailedMessages)
                 {
-                    message.SetAsFailed(_timeProvider.GetUtcNow());
+                    message.Fail(_timeProvider.GetUtcNow());
                 }
 
-                messages = messages.Except(ex.FailedMessages);
+                sentMessages = messages.Except(ex.FailedMessages).ToList();
+            }
+
+            foreach (var message in sentMessages)
+            {
+                message.SetAsSent(_timeProvider.GetUtcNow());
             }
 
             await outboxStorage.UpdateMessagesAsync(messages, cancellationToken);

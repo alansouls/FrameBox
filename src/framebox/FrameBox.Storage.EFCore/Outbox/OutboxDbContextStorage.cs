@@ -46,11 +46,11 @@ internal class OutboxDbContextStorage : IOutboxStorage
 
             var messagesToUpdateQuery = _dbContextWrapper.Context
                 .Set<OutboxMessage>()
-                .Where(m => m.State == Core.Outbox.Enums.OutboxState.Failed)
+                .Where(m => m.State == Core.Outbox.Enums.OutboxState.Pending || m.State == Core.Outbox.Enums.OutboxState.ReadyToRetry)
                 .OrderBy(m => m.UpdatedAt)
                 .Take(maxCount);
 
-            await messagesToUpdateQuery.ExecuteUpdateAsync(m => m.SetProperty(x => x.State, Core.Outbox.Enums.OutboxState.Sent)
+            await messagesToUpdateQuery.ExecuteUpdateAsync(m => m.SetProperty(x => x.State, Core.Outbox.Enums.OutboxState.Sending)
                 .SetProperty(x => x.UpdatedAt, timeStamp).SetProperty(x => x.ProcessId, processId), cancellationToken);
 
             var messages = await _dbContextWrapper.Context

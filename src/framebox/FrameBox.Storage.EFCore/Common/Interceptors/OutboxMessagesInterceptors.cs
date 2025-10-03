@@ -2,8 +2,8 @@
 using FrameBox.Core.Common.Interfaces;
 using FrameBox.Core.Outbox.Interfaces;
 using FrameBox.Core.Outbox.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FrameBox.Storage.EFCore.Common.Interceptors;
 
@@ -12,11 +12,15 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
     private List<OutboxMessage>? _messages = null;
     private readonly IOutboxMessageFactory _messageFactory;
     private readonly IMessageBroker _messageBroker;
+    private TimeProvider _timeProvider;
+    private readonly IServiceProvider _serviceProvider;
 
-    public OutboxMessagesInterceptors(IOutboxMessageFactory messageFactory, IMessageBroker messageBroker)
+    public OutboxMessagesInterceptors(IOutboxMessageFactory messageFactory, IMessageBroker messageBroker, TimeProvider timeProvider, IServiceProvider serviceProvider)
     {
         _messageFactory = messageFactory;
         _messageBroker = messageBroker;
+        _timeProvider = timeProvider;
+        _serviceProvider = serviceProvider;
     }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
@@ -31,8 +35,7 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
         }
 
         var entities = eventData.Context.ChangeTracker.Entries()
-            .Where(e => e.Entity is BaseEntity &&
-                        (e.State == EntityState.Added || e.State == EntityState.Modified))
+            .Where(e => e.Entity is BaseEntity)
             .Select(e => (e.Entity as BaseEntity)!)
             .ToList();
 
@@ -43,7 +46,14 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
             return await base.SavingChangesAsync(eventData, result, cancellationToken);
         }
 
-        var messages = await Task.WhenAll(events.Select(async e => await _messageFactory.CreateAsync(e, cancellationToken)));
+        var sendingDate = _timeProvider.GetUtcNow();
+
+        var messages = await Task.WhenAll(events.Select(async e =>
+        {
+            var message = await _messageFactory.CreateAsync(e, cancellationToken);
+            message.SetAsSending(sendingDate);
+            return message;
+        }));
 
         await eventData.Context.AddRangeAsync(messages, cancellationToken);
 
@@ -61,7 +71,9 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
     {
         if ((_messages ?? []).Count != 0)
         {
-            await _messageBroker.SendMessagesAsync(_messages!, cancellationToken);
+            await _messageBroker.SendMessagesAsync(_messages!, CancellationToken.None);
+
+            await SaveSentMessagesAsync();
         }
 
         return await base.SavedChangesAsync(eventData, result, cancellationToken);
@@ -70,5 +82,20 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
     public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
     {
         return Task.Run(async () => await SavedChangesAsync(eventData, result)).GetAwaiter().GetResult();
+    }
+
+    private async Task SaveSentMessagesAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var scopedOutboxStorage = scope.ServiceProvider.GetRequiredService<IOutboxStorage>();
+
+        var sentDate = _timeProvider.GetUtcNow();
+
+        foreach (var message in _messages!)
+        {
+            message.SetAsSent(sentDate);
+        }
+
+        await scopedOutboxStorage.UpdateMessagesAsync(_messages!, CancellationToken.None);
     }
 }

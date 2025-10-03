@@ -17,9 +17,8 @@ public class OutboxMessage : IMessage
 
     private record OutboxMessageData(Guid EventId, string EventType, string Payload, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, OutboxState State, Guid? ProcessId);
 
-    private const string MessageStateMustBeFailed = "Message state must be failed.";
-    private const string MessageStateMustBeSent = "Message state must be sent.";
-    private const string MaxRetryCountReached = "Max retry count reached.";
+    private const string MessageStateMustBeSending = "Message state must be sending.";
+    private const string MessageStateMustBePendingOrReadyToRetry = "Message must be pending or ready to retry";
 
     public Guid Id => EventId;
     public string Type => EventType;
@@ -63,49 +62,59 @@ public class OutboxMessage : IMessage
 
         CreatedAt = createdAt;
         UpdatedAt = createdAt;
-        State = OutboxState.Sent;
+        State = OutboxState.Pending;
+        RetryCount = 0;
+        ProcessId = null;
+    }
+
+    public Result SetAsSending(DateTimeOffset timeStamp)
+    {
+        if (State != OutboxState.Pending && State != OutboxState.ReadyToRetry)
+        {
+            return Result.Error(MessageStateMustBePendingOrReadyToRetry);
+        }
+
+        if (State == OutboxState.ReadyToRetry)
+        {
+            RetryCount++;
+        }
+
+        State = OutboxState.Sending;
+        UpdatedAt = timeStamp;
+
+        return Result.Success();
     }
 
     public Result SetAsSent(DateTimeOffset timeStamp)
     {
-        if (State != OutboxState.Failed)
+        if (State != OutboxState.Sending)
         {
-            return Result.Error(MessageStateMustBeFailed);
-        }
-
-        if (RetryCount >= InternalOutboxOptions.MaxRetryCount)
-        {
-            return Result.Error(MaxRetryCountReached);
+            return Result.Error(MessageStateMustBeSending);
         }
 
         State = OutboxState.Sent;
         UpdatedAt = timeStamp;
-        RetryCount++;
 
         return Result.Success();
     }
 
-    public Result SetAsReceived(DateTimeOffset timeStamp)
+    public Result Fail(DateTimeOffset timeStamp)
     {
-        if (State != OutboxState.Sent)
+        if (State != OutboxState.Sending)
         {
-            return Result.Error(MessageStateMustBeSent);
+            return Result.Error(MessageStateMustBeSending);
         }
 
-        State = OutboxState.Received;
-        UpdatedAt = timeStamp;
 
-        return Result.Success();
-    }
-
-    public Result SetAsFailed(DateTimeOffset timeStamp)
-    {
-        if (State != OutboxState.Sent)
+        if (RetryCount >= InternalOutboxOptions.MaxRetryCount)
         {
-            return Result.Error(MessageStateMustBeSent);
+            State = OutboxState.Failed;
+        }
+        else
+        {
+            State = OutboxState.ReadyToRetry;
         }
 
-        State = OutboxState.Failed;
         UpdatedAt = timeStamp;
 
         return Result.Success();
