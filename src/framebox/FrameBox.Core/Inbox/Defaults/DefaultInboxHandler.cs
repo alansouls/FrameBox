@@ -5,6 +5,7 @@ using FrameBox.Core.Outbox.Interfaces;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Text.Json;
+using FrameBox.Core.EventContexts.Interfaces;
 
 namespace FrameBox.Core.Inbox.Defaults;
 
@@ -16,8 +17,10 @@ internal class DefaultInboxHandler : IInboxHandler
     private readonly ILogger<DefaultInboxHandler> _logger;
     private readonly IDomainEventSerializer _domainEventSerializer;
     private readonly TimeProvider _timeProvider;
+    private readonly IEventContextStorage _eventContextStorage;
+    private readonly IEventContextManager _eventContextManager;
 
-    public DefaultInboxHandler(IOutboxStorage outboxStorage, IEventHandlerProvider provider, IInboxStorage inboxStorage, ILogger<DefaultInboxHandler> logger, IDomainEventSerializer domainEventSerializer, TimeProvider timeProvider)
+    public DefaultInboxHandler(IOutboxStorage outboxStorage, IEventHandlerProvider provider, IInboxStorage inboxStorage, ILogger<DefaultInboxHandler> logger, IDomainEventSerializer domainEventSerializer, TimeProvider timeProvider, IEventContextStorage eventContextStorage, IEventContextManager eventContextManager)
     {
         _outboxStorage = outboxStorage;
         _eventHandlerProvider = provider;
@@ -25,6 +28,8 @@ internal class DefaultInboxHandler : IInboxHandler
         _logger = logger;
         _domainEventSerializer = domainEventSerializer;
         _timeProvider = timeProvider;
+        _eventContextStorage = eventContextStorage;
+        _eventContextManager = eventContextManager;
     }
 
     public async Task HandleMessage(InboxMessage message, CancellationToken cancellationToken)
@@ -42,6 +47,8 @@ internal class DefaultInboxHandler : IInboxHandler
         try
         {
             var domainEvent = await outboxMessage.ToDomainEvent(_domainEventSerializer, cancellationToken);
+            var eventContexts = await _eventContextStorage.GetEventContextsAsync(domainEvent.Id, cancellationToken);
+            await _eventContextManager.RestoreContextAsync(eventContexts, cancellationToken);
             var handler = _eventHandlerProvider.GetEventHandler(message.HandlerName);
             message.Start(_timeProvider.GetUtcNow());
             await _inboxStorage.UpdateMessagesAsync([message], cancellationToken);

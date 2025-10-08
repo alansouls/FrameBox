@@ -1,4 +1,5 @@
-﻿using FrameBox.Core.Outbox.Interfaces;
+﻿using FrameBox.Core.Inbox.Interfaces;
+using FrameBox.Core.Outbox.Interfaces;
 using FrameBox.Core.Outbox.Models;
 using FrameBox.Storage.EFCore.Common;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +9,10 @@ namespace FrameBox.Storage.EFCore.Outbox;
 
 internal class OutboxDbContextStorage : IOutboxStorage
 {
-    private readonly InternalDbContextWrapper _dbContextWrapper;
+    private readonly InternalDbContextWrapper<IOutboxStorage> _dbContextWrapper;
     private readonly TimeProvider _timeProvider;
 
-    public OutboxDbContextStorage(InternalDbContextWrapper dbContextWrapper, TimeProvider timeProvider)
+    public OutboxDbContextStorage(InternalDbContextWrapper<IOutboxStorage> dbContextWrapper, TimeProvider timeProvider)
     {
         _dbContextWrapper = dbContextWrapper;
         _timeProvider = timeProvider;

@@ -14,7 +14,7 @@ internal class LongRunningHandler : FrameBox.Core.Events.Defaults.EventHandler<P
 
     public override async Task HandleAsync(PaymentCreatedEvent @event, CancellationToken cancellationToken)
     {
-        await Task.Delay(TimeSpan.FromSeconds(30));
+        await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
 
         _logger.LogInformation("Long running handler processed PaymentCreatedEvent with Id: {EventId}", @event.Id);
     }

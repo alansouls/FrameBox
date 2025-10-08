@@ -8,10 +8,10 @@ namespace FrameBox.Storage.EFCore.Outbox;
 
 internal class InboxDbContextStorage : IInboxStorage
 {
-    private readonly InternalDbContextWrapper _dbContextWrapper;
+    private readonly InternalDbContextWrapper<IInboxStorage> _dbContextWrapper;
     private readonly TimeProvider _timeProvider;
 
-    public InboxDbContextStorage(InternalDbContextWrapper dbContextWrapper, TimeProvider timeProvider)
+    public InboxDbContextStorage(InternalDbContextWrapper<IInboxStorage> dbContextWrapper, TimeProvider timeProvider)
     {
         _dbContextWrapper = dbContextWrapper;
         _timeProvider = timeProvider;

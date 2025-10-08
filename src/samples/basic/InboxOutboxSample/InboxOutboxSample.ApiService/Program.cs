@@ -1,11 +1,14 @@
+using FrameBox.Core.EventContexts.Extensions;
 using FrameBox.Core.Events.Interfaces;
 using FrameBox.Core.Extensions;
 using FrameBox.MessageBroker.RabbitMQ.Common.Extensions;
 using FrameBox.Storage.EFCore.Common.Extensions;
 using InboxOutboxSample.ApiService.Domain;
+using InboxOutboxSample.ApiService.EventContextFeeder;
 using InboxOutboxSample.Shared.Data;
 using InboxOutboxSample.Shared.Domain;
 using InboxOutboxSample.Shared.Handlers.Extensions;
+using InboxOutboxSample.Shared.Utils;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,9 +22,14 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddFrameBoxCore();
+builder.Services.AddFrameBoxCore(configureEventContextFactoryRegistry: registryBuilder =>
+{
+    registryBuilder.AddFeeder<RequestIpContextFeeder>()
+                .AddRestorer<RequestIpContextFeeder>(RequestIpContextFeeder.ContextType);
+});
 builder.Services.AddOutboxEntityFrameworkCoreStorage<MyDbContext>();
 builder.Services.AddInboxEntityFrameworkCoreStorage<MyDbContext>();
+builder.Services.AddEventContextEntityFrameworkCoreStorage<MyDbContext>();
 builder.Services.AddRabbitMQMessageBroker(builder.Configuration);
 builder.Services.AddRabbitMQListener(builder.Configuration);
 builder.Services.AddDbContext<MyDbContext>((serviceProvider, options) =>
@@ -51,9 +59,12 @@ var v1 = api.MapGroup("v1");
 var payments = v1.MapGroup("payments");
 
 payments.MapPost("/", async (CreatePayment dto, MyDbContext context,
+        HttpContext httpContext,
+        UsefulDataBag bag,
         IEventDispatcher eventDispatcher,
         CancellationToken cancellationToken) =>
     {
+        bag.IpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
         var payment = new Payment(dto.Amount);
 
         await context.AddAsync(payment, cancellationToken);

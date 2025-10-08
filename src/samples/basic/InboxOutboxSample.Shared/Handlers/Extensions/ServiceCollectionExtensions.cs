@@ -1,16 +1,19 @@
 ﻿using FrameBox.Core.Events.Interfaces;
 using FrameBox.Core.Extensions;
 using InboxOutboxSample.ApiService.Domain;
+using InboxOutboxSample.Shared.Utils;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace InboxOutboxSample.Shared.Handlers.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddHandlers(this IServiceCollection serviceCollection)
+    public static IServiceCollection AddHandlers(this IServiceCollection services)
     {
-        serviceCollection.AddEventHandlersFromAssemblyContaining<PaymentCreatedHandler>();
+        services.AddEventHandlersFromAssemblyContaining<PaymentCreatedHandler>();
 
-        return serviceCollection;
+        services.AddScoped<UsefulDataBag>();
+
+        return services;
     }
 }

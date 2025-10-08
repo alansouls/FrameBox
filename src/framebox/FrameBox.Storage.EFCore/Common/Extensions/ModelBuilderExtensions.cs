@@ -11,9 +11,17 @@ public static class ModelBuilderExtensions
 
         modelBuilder.ApplyConfiguration(configuration);
     }
+
     public static void ConfigureInbox(this ModelBuilder modelBuilder, string? tableName = null, string? schemaName = null)
     {
         var configuration = new InboxMessageConfiguration(schemaName, tableName);
+
+        modelBuilder.ApplyConfiguration(configuration);
+    }
+
+    public static void ConfigureEventContext(this ModelBuilder modelBuilder, string? tableName = null, string? schemaName = null)
+    {
+        var configuration = new EventContextDbModelConfiguration(schemaName, tableName);
 
         modelBuilder.ApplyConfiguration(configuration);
     }
