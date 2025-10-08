@@ -1,4 +1,3 @@
-﻿using System.Collections;
 using FrameBox.Core.Events.Interfaces;
 
 namespace FrameBox.Core.EventContexts.Interfaces;
