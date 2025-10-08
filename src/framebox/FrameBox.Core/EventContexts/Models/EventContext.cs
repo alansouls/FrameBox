@@ -12,7 +12,7 @@ public class EventContext : IEventContext
 
     public void Push(string key, string value)
     {
-        _data.Add(key, value);
+        _data[key] = value;
     }
 
     public IReadOnlyDictionary<string, string> Data
