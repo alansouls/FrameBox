@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IInboxMessageFactory, DefaultInboxMessageFactory>();
         services.TryAddSingleton<IInboxDispatcher, InboxDispatcher>();
         services.AddHostedService(sp => (InboxDispatcher)sp.GetRequiredService<IInboxDispatcher>());
+        services.AddHostedService<InboxTimeoutService>();
 
         return services;
     }

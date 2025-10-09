@@ -63,6 +63,20 @@ internal class OutboxDbContextStorage : IOutboxStorage
         }, verifySucceeded: (ct) => _dbContextWrapper.Context.Set<OutboxMessage>().AnyAsync(o => o.ProcessId == o.ProcessId, cancellationToken: ct), isolationLevel: System.Data.IsolationLevel.RepeatableRead, cancellationToken);
     }
 
+    public async Task<IEnumerable<OutboxMessage>> GetMessagesToTimeoutAsync(int maxCount, CancellationToken cancellationToken = default)
+    {
+        if (maxCount <= 0)
+        {
+            return [];
+        }
+
+        return await _dbContextWrapper.Context.Set<OutboxMessage>()
+            .Where(m => m.State == Core.Outbox.Enums.OutboxState.Sending)
+            .OrderBy(m => m.UpdatedAt)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task UpdateMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default)
     {
         _dbContextWrapper.Context.UpdateRange(messages);

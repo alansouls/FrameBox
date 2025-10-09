@@ -94,13 +94,13 @@ public class InboxMessage : IMessage
 
     public Result Fail(string failurePayload, DateTimeOffset timeStamp)
     {
-        if (State != InboxState.Running)
+        if (State == InboxState.Finished)
         {
-            return Result.Error("Message state must be running.");
+            return Result.Error("Message state cannot be finished.");
         }
 
         FailurePayload = failurePayload;
-        State = RetryCount < InternalInboxOptions.MaxInboxRetryCount ? InboxState.ReadyToRetry : InboxState.Failed;
+        State = RetryCount < InternalInboxOptions.MaxRetryCount ? InboxState.ReadyToRetry : InboxState.Failed;
         UpdatedAt = timeStamp;
         return Result.Success();
     }

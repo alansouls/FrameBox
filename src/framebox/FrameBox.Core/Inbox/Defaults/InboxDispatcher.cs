@@ -23,7 +23,7 @@ internal class InboxDispatcher : IInboxDispatcher, IHostedService
 
     public InboxDispatcher(IServiceProvider serviceProvider, ILogger<InboxDispatcher> logger, TimeProvider timeProvider)
     {
-        _timer = new PeriodicTimer(InternalOutboxOptions.DispatchInterval);
+        _timer = new PeriodicTimer(InternalOutboxOptions.RetryInterval);
         _timerCancellationTokenSource = new CancellationTokenSource();
         _serviceProvider = serviceProvider;
         _logger = logger;
@@ -78,7 +78,7 @@ internal class InboxDispatcher : IInboxDispatcher, IHostedService
             var inboxStorage = scope.ServiceProvider.GetRequiredService<IInboxStorage>();
             var eventHandlerProvider = scope.ServiceProvider.GetRequiredService<IEventHandlerProvider>();
             var messageBroker = scope.ServiceProvider.GetRequiredService<IMessageBroker>();
-            var messages = await inboxStorage.GetMessagesReadyToSendAsync(InternalInboxOptions.MaxInboxMessagesToProcess, cancellationToken);
+            var messages = await inboxStorage.GetMessagesReadyToSendAsync(InternalInboxOptions.MaxBatchCountToRetry, cancellationToken);
 
             var inboxMessages = messages.ToList();
             

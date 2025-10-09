@@ -20,7 +20,7 @@ internal class InboxDbContextStorage : IInboxStorage
     public async Task AddMessagesAsync(IEnumerable<InboxMessage> messages, CancellationToken cancellationToken = default)
     {
         await _dbContextWrapper.Context.AddRangeAsync(messages, cancellationToken);
-        
+
         await _dbContextWrapper.Context.SaveChangesAsync(cancellationToken);
     }
 
@@ -66,5 +66,21 @@ internal class InboxDbContextStorage : IInboxStorage
     public Task<bool> ExistsInboxByOutboxIdAsync(Guid outboxMessageId, CancellationToken cancellationToken = default)
     {
         return _dbContextWrapper.Context.Set<InboxMessage>().AnyAsync(m => m.OutboxMessageId == outboxMessageId, cancellationToken);
+    }
+
+    public async Task<IEnumerable<InboxMessage>> GetMessagesToTimeoutAsync(int maxCount, CancellationToken cancellationToken = default)
+    {
+        if (maxCount <= 0)
+        {
+            return [];
+        }
+
+        return await _dbContextWrapper.Context.Set<InboxMessage>()
+            .Where(m => m.State == Core.Inbox.Enums.InboxState.Running 
+                    || m.State == Core.Inbox.Enums.InboxState.Retrying 
+                    || m.State == Core.Inbox.Enums.InboxState.Pending)
+            .OrderBy(m => m.UpdatedAt)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
     }
 }

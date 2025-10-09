@@ -11,4 +11,6 @@ public interface IOutboxStorage
     Task UpdateMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default);
 
     Task<OutboxMessage?> GetMessageByIdAsync(Guid messageId, CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<OutboxMessage>> GetMessagesToTimeoutAsync(int maxCount, CancellationToken cancellationToken = default);
 }
