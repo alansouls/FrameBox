@@ -1,5 +1,4 @@
 ﻿using FrameBox.Core.Events.Interfaces;
-using Microsoft.Extensions.Hosting;
 
 namespace FrameBox.Core.Events.Defaults;
 
