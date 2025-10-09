@@ -1,6 +1,5 @@
 ﻿using FrameBox.Core.Inbox.Defaults;
 using FrameBox.Core.Inbox.Interfaces;
-using FrameBox.Core.Outbox.Defaults;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
