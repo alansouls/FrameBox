@@ -78,7 +78,7 @@ internal class InboxDispatcher : IInboxDispatcher, IHostedService
             var inboxStorage = scope.ServiceProvider.GetRequiredService<IInboxStorage>();
             var eventHandlerProvider = scope.ServiceProvider.GetRequiredService<IEventHandlerProvider>();
             var messageBroker = scope.ServiceProvider.GetRequiredService<IMessageBroker>();
-            var messages = await inboxStorage.GetMessagesReadyToSendAsync(InternalInboxOptions.MaxRetryCount, cancellationToken);
+            var messages = await inboxStorage.GetMessagesReadyToSendAsync(InternalInboxOptions.MaxBatchCountToRetry, cancellationToken);
 
             var inboxMessages = messages.ToList();
             
