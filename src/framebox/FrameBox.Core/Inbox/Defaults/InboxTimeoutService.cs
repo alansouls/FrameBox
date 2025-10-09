@@ -3,7 +3,7 @@ using FrameBox.Core.Inbox.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace FrameBox.Core.Outbox.Defaults;
+namespace FrameBox.Core.Inbox.Defaults;
 
 internal class InboxTimeoutService : BackgroundService
 {
