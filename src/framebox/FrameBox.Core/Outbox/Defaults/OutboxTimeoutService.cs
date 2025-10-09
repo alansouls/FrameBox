@@ -28,12 +28,19 @@ internal class OutboxTimeoutService : BackgroundService
                 var outboxStorage = scope.ServiceProvider.GetRequiredService<IOutboxStorage>();
                 var messages = await outboxStorage.GetMessagesToTimeoutAsync(InternalOutboxOptions.MaxBatchCountToTimeout, stoppingToken);
 
-                foreach (var message in messages.Where(m => m.UpdatedAt + InternalOutboxOptions.Timeout < _timeProvider.GetUtcNow()))
+                var timedOutMessages = messages
+                    .Where(m => m.UpdatedAt + InternalOutboxOptions.Timeout < _timeProvider.GetUtcNow())
+                    .ToList();
+
+                foreach (var message in timedOutMessages)
                 {
                     message.Fail(_timeProvider.GetUtcNow());
                 }
 
-                await outboxStorage.UpdateMessagesAsync(messages, stoppingToken);
+                if (timedOutMessages.Count > 0)
+                {
+                    await outboxStorage.UpdateMessagesAsync(timedOutMessages, stoppingToken);
+                }
             }
             catch (OperationCanceledException)
             {
