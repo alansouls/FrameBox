@@ -6,15 +6,17 @@ namespace FrameBox.Core.Events.Defaults;
 internal class DefaultEventHandlerProvider : IEventHandlerProvider
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly IEventRegistry _eventRegistry;
 
-    public DefaultEventHandlerProvider(IServiceProvider serviceProvider)
+    public DefaultEventHandlerProvider(IServiceProvider serviceProvider, IEventRegistry eventRegistry)
     {
         _serviceProvider = serviceProvider;
+        _eventRegistry = eventRegistry;
     }
 
     public IEventHandler GetEventHandler(string handlerName)
     {
-        var handlerType = Type.GetType(handlerName);
+        var handlerType = _eventRegistry.GetEventHandlerType(handlerName);
 
         if (handlerType is null)
         {

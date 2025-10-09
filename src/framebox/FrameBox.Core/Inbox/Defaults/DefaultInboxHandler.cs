@@ -19,8 +19,9 @@ internal class DefaultInboxHandler : IInboxHandler
     private readonly TimeProvider _timeProvider;
     private readonly IEventContextStorage _eventContextStorage;
     private readonly IEventContextManager _eventContextManager;
+    private readonly IEventRegistry _eventRegistry;
 
-    public DefaultInboxHandler(IOutboxStorage outboxStorage, IEventHandlerProvider provider, IInboxStorage inboxStorage, ILogger<DefaultInboxHandler> logger, IDomainEventSerializer domainEventSerializer, TimeProvider timeProvider, IEventContextStorage eventContextStorage, IEventContextManager eventContextManager)
+    public DefaultInboxHandler(IOutboxStorage outboxStorage, IEventHandlerProvider provider, IInboxStorage inboxStorage, ILogger<DefaultInboxHandler> logger, IDomainEventSerializer domainEventSerializer, TimeProvider timeProvider, IEventContextStorage eventContextStorage, IEventContextManager eventContextManager, IEventRegistry eventRegistry)
     {
         _outboxStorage = outboxStorage;
         _eventHandlerProvider = provider;
@@ -30,6 +31,7 @@ internal class DefaultInboxHandler : IInboxHandler
         _timeProvider = timeProvider;
         _eventContextStorage = eventContextStorage;
         _eventContextManager = eventContextManager;
+        _eventRegistry = eventRegistry;
     }
 
     public async Task HandleMessage(InboxMessage message, CancellationToken cancellationToken)
@@ -46,7 +48,7 @@ internal class DefaultInboxHandler : IInboxHandler
 
         try
         {
-            var domainEvent = await outboxMessage.ToDomainEvent(_domainEventSerializer, cancellationToken);
+            var domainEvent = await outboxMessage.ToDomainEvent(_eventRegistry, _domainEventSerializer, cancellationToken);
             var eventContexts = await _eventContextStorage.GetEventContextsAsync(domainEvent.Id, cancellationToken);
             await _eventContextManager.RestoreContextAsync(eventContexts, cancellationToken);
             var handler = _eventHandlerProvider.GetEventHandler(message.HandlerName);

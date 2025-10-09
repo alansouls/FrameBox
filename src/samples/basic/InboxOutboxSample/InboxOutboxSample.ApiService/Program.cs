@@ -1,4 +1,3 @@
-using FrameBox.Core.EventContexts.Extensions;
 using FrameBox.Core.Events.Interfaces;
 using FrameBox.Core.Extensions;
 using FrameBox.MessageBroker.RabbitMQ.Common.Extensions;

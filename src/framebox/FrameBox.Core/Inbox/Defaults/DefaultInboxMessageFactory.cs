@@ -8,11 +8,13 @@ public class DefaultInboxMessageFactory : IInboxMessageFactory
 {
     private readonly IEventHandlerProvider _eventHandlerProvider;
     private readonly TimeProvider _timeProvider;
+    private readonly IEventRegistry _eventRegistry;
 
-    public DefaultInboxMessageFactory(IEventHandlerProvider eventHandlerProvider, TimeProvider timeProvider)
+    public DefaultInboxMessageFactory(IEventHandlerProvider eventHandlerProvider, TimeProvider timeProvider, IEventRegistry eventRegistry)
     {
         _eventHandlerProvider = eventHandlerProvider;
         _timeProvider = timeProvider;
+        _eventRegistry = eventRegistry;
     }
 
     public IEnumerable<InboxMessage> CreateMessages(IEvent @event)
@@ -22,7 +24,7 @@ public class DefaultInboxMessageFactory : IInboxMessageFactory
         return handlers.Select(handlerType => new InboxMessage(
             Guid.NewGuid(),
             @event.Id,
-            handlerType.AssemblyQualifiedName!,
+            _eventRegistry.GetHandlerName(handlerType),
             _timeProvider.GetUtcNow()));
     }
 }
