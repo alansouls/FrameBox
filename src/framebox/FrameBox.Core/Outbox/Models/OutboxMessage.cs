@@ -100,9 +100,9 @@ public class OutboxMessage : IMessage
 
     public Result Fail(DateTimeOffset timeStamp)
     {
-        if (State != OutboxState.Sending)
+        if (State == OutboxState.Sent)
         {
-            return Result.Error(MessageStateMustBeSending);
+            return Result.Error("Message cannot be sent.");
         }
 
 

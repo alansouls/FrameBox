@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IOutboxDispatcher, OutboxDispatcher>();
         services.TryAddScoped<IOutboxHandler, DefaultOutboxMessageHandler>();
         services.AddHostedService(sp => (OutboxDispatcher)sp.GetRequiredService<IOutboxDispatcher>());
+        services.AddHostedService<OutboxTimeoutService>();
 
         return services;
     }
