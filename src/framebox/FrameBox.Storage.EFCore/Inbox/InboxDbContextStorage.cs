@@ -83,4 +83,25 @@ internal class InboxDbContextStorage : IInboxStorage
             .Take(maxCount)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IEnumerable<InboxMessage>> GetMessagesToCleanupAsync(int maxCount, DateTimeOffset cutoffDate, CancellationToken cancellationToken = default)
+    {
+        if (maxCount <= 0)
+        {
+            return [];
+        }
+
+        return await _dbContextWrapper.Context.Set<InboxMessage>()
+            .Where(m => (m.State == Core.Inbox.Enums.InboxState.Finished || m.State == Core.Inbox.Enums.InboxState.Failed)
+                    && m.UpdatedAt < cutoffDate)
+            .OrderBy(m => m.UpdatedAt)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> DeleteMessagesAsync(IEnumerable<InboxMessage> messages, CancellationToken cancellationToken = default)
+    {
+        _dbContextWrapper.Context.RemoveRange(messages);
+        return await _dbContextWrapper.Context.SaveChangesAsync(cancellationToken);
+    }
 }

@@ -13,4 +13,10 @@ internal static class InternalOutboxOptions
     public static TimeSpan TimeoutCheckerFrequency { get; set; } = TimeSpan.FromMinutes(1);
 
     public static int MaxBatchCountToTimeout { get; set; } = 1000;
+
+    public static TimeSpan CleanupFrequency { get; set; } = TimeSpan.FromHours(1);
+
+    public static int RetentionPeriodInDays { get; set; } = 7;
+
+    public static int MaxBatchCountToCleanup { get; set; } = 1000;
 }

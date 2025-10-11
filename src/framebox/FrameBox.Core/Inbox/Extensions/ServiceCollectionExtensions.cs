@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IInboxDispatcher, InboxDispatcher>();
         services.AddHostedService(sp => (InboxDispatcher)sp.GetRequiredService<IInboxDispatcher>());
         services.AddHostedService<InboxTimeoutService>();
+        services.AddHostedService<InboxCleanupService>();
 
         return services;
     }

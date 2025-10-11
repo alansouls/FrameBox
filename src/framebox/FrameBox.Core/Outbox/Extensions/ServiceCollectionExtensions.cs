@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IOutboxHandler, DefaultOutboxMessageHandler>();
         services.AddHostedService(sp => (OutboxDispatcher)sp.GetRequiredService<IOutboxDispatcher>());
         services.AddHostedService<OutboxTimeoutService>();
+        services.AddHostedService<OutboxCleanupService>();
 
         return services;
     }
