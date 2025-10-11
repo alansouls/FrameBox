@@ -77,6 +77,27 @@ internal class OutboxDbContextStorage : IOutboxStorage
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<OutboxMessage>> GetMessagesToCleanupAsync(int maxCount, DateTimeOffset cutoffDate, CancellationToken cancellationToken = default)
+    {
+        if (maxCount <= 0)
+        {
+            return [];
+        }
+
+        return await _dbContextWrapper.Context.Set<OutboxMessage>()
+            .Where(m => (m.State == Core.Outbox.Enums.OutboxState.Sent || m.State == Core.Outbox.Enums.OutboxState.Failed)
+                    && m.UpdatedAt < cutoffDate)
+            .OrderBy(m => m.UpdatedAt)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> DeleteMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default)
+    {
+        _dbContextWrapper.Context.RemoveRange(messages);
+        return await _dbContextWrapper.Context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task UpdateMessagesAsync(IEnumerable<OutboxMessage> messages, CancellationToken cancellationToken = default)
     {
         _dbContextWrapper.Context.UpdateRange(messages);
