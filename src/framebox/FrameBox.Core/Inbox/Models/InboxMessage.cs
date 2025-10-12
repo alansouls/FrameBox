@@ -3,21 +3,38 @@ using FrameBox.Core.Common.Interfaces;
 using FrameBox.Core.Inbox.Enums;
 using FrameBox.Core.Inbox.Options;
 using System.Text.Json;
+using FrameBox.Core.Events.Interfaces;
 
 namespace FrameBox.Core.Inbox.Models;
 
 public class InboxMessage : IMessage
 {
-    private static readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false
     };
 
-    private record InboxMessageData(Guid Id, Guid OutboxMessageId, string HandlerName, string? FailurePayload, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, InboxState State, int RetryCount, Guid? ProcessId);
+    private record InboxMessageData(
+        Guid Id,
+        Guid EventId,
+        string EventName,
+        string EventPayload,
+        string HandlerName,
+        string? FailurePayload,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset UpdatedAt,
+        InboxState State,
+        int RetryCount,
+        Guid? ProcessId);
 
     public Guid Id { get; }
-    public Guid OutboxMessageId { get; }
+    public Guid EventId { get; }
+
+    public string EventName { get; }
+
+    public string EventPayload { get; }
+
     public string HandlerName { get; }
     public string? FailurePayload { get; private set; }
     public DateTimeOffset CreatedAt { get; }
@@ -29,7 +46,9 @@ public class InboxMessage : IMessage
     private InboxMessage(InboxMessageData data)
     {
         Id = data.Id;
-        OutboxMessageId = data.OutboxMessageId;
+        EventId = data.EventId;
+        EventName = data.EventName;
+        EventPayload = data.EventPayload;
         HandlerName = data.HandlerName;
         FailurePayload = data.FailurePayload;
         CreatedAt = data.CreatedAt;
@@ -41,20 +60,23 @@ public class InboxMessage : IMessage
 
     public static InboxMessage FromJson(ReadOnlySpan<byte> utf8Data)
     {
-        var data = JsonSerializer.Deserialize<InboxMessageData>(utf8Data, _serializerOptions) ?? throw new InvalidOperationException("Failed to deserialize InboxMessageData");
+        var data = JsonSerializer.Deserialize<InboxMessageData>(utf8Data, SerializerOptions) ??
+                   throw new InvalidOperationException("Failed to deserialize InboxMessageData");
 
         return new InboxMessage(data);
     }
 
     public byte[] ToJson()
     {
-        return JsonSerializer.SerializeToUtf8Bytes(this, _serializerOptions);
+        return JsonSerializer.SerializeToUtf8Bytes(this, SerializerOptions);
     }
 
-    public InboxMessage(Guid id, Guid outboxMessageId, string handlerName, DateTimeOffset createdAt)
+    public InboxMessage(Guid id, Guid eventId, string eventName, string eventPayload, string handlerName, DateTimeOffset createdAt)
     {
         Id = id;
-        OutboxMessageId = outboxMessageId;
+        EventId = eventId;
+        EventName = eventName;
+        EventPayload = eventPayload;
         HandlerName = handlerName;
         CreatedAt = createdAt;
         UpdatedAt = createdAt;
@@ -103,5 +125,24 @@ public class InboxMessage : IMessage
         State = RetryCount < InternalInboxOptions.MaxRetryCount ? InboxState.ReadyToRetry : InboxState.Failed;
         UpdatedAt = timeStamp;
         return Result.Success();
+    }
+
+    public async Task<IEvent> GetEventAsync(IDomainEventSerializer eventSerializer, IEventRegistry eventRegistry, CancellationToken cancellationToken)
+    {
+        var eventType = eventRegistry.GetEventType(EventName);
+        
+        if (eventType is null)
+        {
+            throw new InvalidOperationException($"Event type '{EventName}' is not registered.");
+        }
+        
+        var domainEvent = await eventSerializer.DeserializeAsync(EventPayload, eventType, cancellationToken);
+        
+        if (!domainEvent.IsSuccess)
+        {
+            throw new InvalidOperationException($"Failed to deserialize event of type '{EventName}'.");
+        }
+        
+        return domainEvent.Value;
     }
 }

@@ -22,7 +22,14 @@ public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
 
         builder.HasKey(p => p.Id);
 
-        builder.Property(p => p.OutboxMessageId)
+        builder.Property(p => p.EventId)
+            .IsRequired();
+        
+        builder.Property(p => p.EventName)
+            .HasMaxLength(200)
+            .IsRequired();
+        
+        builder.Property(p => p.EventPayload)
             .IsRequired();
 
         builder.Property(p => p.HandlerName)
@@ -40,6 +47,7 @@ public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
 
         builder.HasIndex(p => p.ProcessId);
         builder.HasIndex(p => p.State);
-        builder.HasIndex(p => p.OutboxMessageId);
+        
+        builder.HasIndex(p => p.EventId);
     }
 }

@@ -55,7 +55,7 @@ else
 
 		var inboxes = await Context.Set<InboxMessage>()
 			.AsNoTracking()
-			.Where(i => i.OutboxMessageId == OutboxId)
+			.Where(i => i.EventId == OutboxId)
 			.OrderByDescending(x => x.UpdatedAt)
 			.Take(100)
 			.ToListAsync();

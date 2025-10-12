@@ -5,5 +5,5 @@ namespace FrameBox.Core.Inbox.Interfaces;
 
 public interface IInboxMessageFactory
 {
-    IEnumerable<InboxMessage> CreateMessages(IEvent @event);
+    ValueTask<IEnumerable<InboxMessage>> CreateMessages(IEvent @event, CancellationToken cancellationToken = default);
 }

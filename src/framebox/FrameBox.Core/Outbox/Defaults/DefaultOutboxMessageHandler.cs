@@ -14,7 +14,8 @@ internal class DefaultOutboxMessageHandler : IOutboxHandler
     private readonly IMessageBroker _messageBroker;
     private readonly IEventRegistry _eventRegistry;
 
-    public DefaultOutboxMessageHandler(IInboxMessageFactory inboxMessageFactory, IInboxStorage inboxStorage, IDomainEventSerializer domainEventSerializer, IMessageBroker messageBroker, IEventRegistry eventRegistry)
+    public DefaultOutboxMessageHandler(IInboxMessageFactory inboxMessageFactory, IInboxStorage inboxStorage,
+        IDomainEventSerializer domainEventSerializer, IMessageBroker messageBroker, IEventRegistry eventRegistry)
     {
         _inboxMessageFactory = inboxMessageFactory;
         _inboxStorage = inboxStorage;
@@ -25,14 +26,14 @@ internal class DefaultOutboxMessageHandler : IOutboxHandler
 
     public async Task HandleMessage(OutboxMessage outboxMessage, CancellationToken cancellationToken)
     {
-        if (await _inboxStorage.ExistsInboxByOutboxIdAsync(outboxMessage.Id, cancellationToken))
+        if (await _inboxStorage.ExistsInboxByEventIdAsync(outboxMessage.Id, cancellationToken))
         {
             return;
         }
 
         var domainEvent = await outboxMessage.ToDomainEvent(_eventRegistry, _domainEventSerializer, cancellationToken);
 
-        var inboxMessages = _inboxMessageFactory.CreateMessages(domainEvent)
+        var inboxMessages = (await _inboxMessageFactory.CreateMessages(domainEvent, cancellationToken))
             .ToList();
 
         if (inboxMessages.Count == 0)
