@@ -26,6 +26,7 @@ builder.Services.AddFrameBoxCore(configureEventContextFactoryRegistry: registryB
     registryBuilder.AddFeeder<RequestIpContextFeeder>()
                 .AddRestorer<RequestIpContextFeeder>(RequestIpContextFeeder.ContextType);
 });
+
 builder.Services.AddOutboxEntityFrameworkCoreStorage<MyDbContext>();
 builder.Services.AddInboxEntityFrameworkCoreStorage<MyDbContext>();
 builder.Services.AddEventContextEntityFrameworkCoreStorage<MyDbContext>();
@@ -35,6 +36,7 @@ builder.Services.AddDbContext<MyDbContext>((serviceProvider, options) =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("payments-db")).UseAsOutboxStorage(serviceProvider);
 });
+
 builder.EnrichNpgsqlDbContext<MyDbContext>();
 
 builder.Services.AddHandlers();
