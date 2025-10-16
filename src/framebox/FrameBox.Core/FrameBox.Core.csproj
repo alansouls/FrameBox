@@ -10,7 +10,7 @@
     
     <!-- Package Information -->
     <PackageId>FrameBox.Core</PackageId>
-    <Version>1.0.0</Version>
+	  <Version>1.0.1</Version>
     <Authors>alansouls</Authors>
     <Description>Core library for FrameBox framework providing event handling, inbox/outbox patterns, and domain event management.</Description>
     <PackageTags>framebox;events;domain-events;cqrs;messaging;outbox;inbox</PackageTags>

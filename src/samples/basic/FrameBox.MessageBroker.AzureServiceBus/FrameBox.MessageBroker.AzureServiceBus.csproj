@@ -10,7 +10,7 @@
 
 		<!-- Package Information -->
 		<PackageId>FrameBox.MessageBroker.AzureServiceBus</PackageId>
-		<Version>1.0.0</Version>
+		<Version>1.0.1</Version>
 		<Authors>alansouls</Authors>
 		<Description>Azure Service Bus message broker implementation for FrameBox providing reliable message publishing and consumption.</Description>
 		<PackageTags>framebox;azureservicebus;servicebus;messagebroker;messaging;publisher;consumer;azure</PackageTags>
