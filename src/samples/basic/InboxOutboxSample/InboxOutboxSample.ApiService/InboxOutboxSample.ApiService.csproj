@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Azure.Messaging.ServiceBus" Version="9.5.1" />
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.4.1" />
     <PackageReference Include="Aspire.RabbitMQ.Client.v7" Version="9.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
@@ -16,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\framebox\FrameBox.MessageBroker.RabbitMQ\FrameBox.MessageBroker.RabbitMQ.csproj" />
+    <ProjectReference Include="..\..\FrameBox.MessageBroker.AzureServiceBus\FrameBox.MessageBroker.AzureServiceBus.csproj" />
     <ProjectReference Include="..\..\InboxOutboxSample.Shared\InboxOutboxSample.Shared.csproj" />
     <ProjectReference Include="..\InboxOutboxSample.ServiceDefaults\InboxOutboxSample.ServiceDefaults.csproj" />
   </ItemGroup>

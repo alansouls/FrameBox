@@ -1,6 +1,6 @@
 using FrameBox.Core.Events.Interfaces;
 using FrameBox.Core.Extensions;
-using FrameBox.MessageBroker.RabbitMQ.Common.Extensions;
+using FrameBox.MessageBroker.RabbitMQ.Extensions;
 using FrameBox.Storage.EFCore.Common.Extensions;
 using InboxOutboxSample.ApiService.Domain;
 using InboxOutboxSample.ApiService.EventContextFeeder;
@@ -30,8 +30,10 @@ builder.Services.AddFrameBoxCore(configureEventContextFactoryRegistry: registryB
 builder.Services.AddOutboxEntityFrameworkCoreStorage<MyDbContext>();
 builder.Services.AddInboxEntityFrameworkCoreStorage<MyDbContext>();
 builder.Services.AddEventContextEntityFrameworkCoreStorage<MyDbContext>();
-builder.Services.AddRabbitMQMessageBroker(builder.Configuration);
-builder.Services.AddRabbitMQListener(builder.Configuration);
+//builder.Services.AddRabbitMQMessageBroker(builder.Configuration);
+//builder.Services.AddRabbitMQListener(builder.Configuration);
+builder.Services.AddAzureServiceBusMessageBroker(builder.Configuration);
+builder.Services.AddAzureServiceBusListener(builder.Configuration);
 builder.Services.AddDbContext<MyDbContext>((serviceProvider, options) =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("payments-db")).UseAsOutboxStorage(serviceProvider);
@@ -41,7 +43,10 @@ builder.EnrichNpgsqlDbContext<MyDbContext>();
 
 builder.Services.AddHandlers();
 
-builder.AddRabbitMQClient("rabbitmq");
+//builder.AddRabbitMQClient("rabbitmq");
+
+
+builder.AddAzureServiceBusClient("servicebus");
 
 var app = builder.Build();
 

@@ -2,16 +2,16 @@
 using FrameBox.Core.Common.Interfaces;
 using FrameBox.Core.Inbox.Models;
 using FrameBox.Core.Outbox.Models;
-using FrameBox.MessageBroker.RabbitMQ.Common.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
 using System.Text.Json;
-using FrameBox.MessageBroker.RabbitMQ.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using FrameBox.MessageBroker.RabbitMQ.Options;
+using FrameBox.MessageBroker.RabbitMQ.Interfaces;
 
-namespace FrameBox.MessageBroker.RabbitMQ.Common.Services;
+namespace FrameBox.MessageBroker.RabbitMQ.Services;
 
 public class RabbitMQBroker : IMessageBroker
 {

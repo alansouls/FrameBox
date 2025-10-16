@@ -1,9 +1,9 @@
 using FrameBox.Core.Outbox.Models;
-using FrameBox.MessageBroker.RabbitMQ.Common.Interfaces;
-using FrameBox.MessageBroker.RabbitMQ.Common.Options;
+using FrameBox.MessageBroker.RabbitMQ.Interfaces;
+using FrameBox.MessageBroker.RabbitMQ.Options;
 using Microsoft.Extensions.Options;
 
-namespace FrameBox.MessageBroker.RabbitMQ.Common.Defaults;
+namespace FrameBox.MessageBroker.RabbitMQ.Defaults;
 
 public class DefaultOutboxRoutingKeyFactory : IRoutingKeyFactory<OutboxMessage>
 {

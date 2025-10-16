@@ -1,15 +1,15 @@
 ﻿using FrameBox.Core.Common.Interfaces;
 using FrameBox.Core.Inbox.Models;
 using FrameBox.Core.Outbox.Models;
-using FrameBox.MessageBroker.RabbitMQ.Common.Defaults;
-using FrameBox.MessageBroker.RabbitMQ.Common.Interfaces;
-using FrameBox.MessageBroker.RabbitMQ.Common.Options;
-using FrameBox.MessageBroker.RabbitMQ.Common.Services;
+using FrameBox.MessageBroker.RabbitMQ.Defaults;
+using FrameBox.MessageBroker.RabbitMQ.Interfaces;
+using FrameBox.MessageBroker.RabbitMQ.Options;
+using FrameBox.MessageBroker.RabbitMQ.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace FrameBox.MessageBroker.RabbitMQ.Common.Extensions;
+namespace FrameBox.MessageBroker.RabbitMQ.Extensions;
 
 public static class ServiceCollectionExtensions
 {

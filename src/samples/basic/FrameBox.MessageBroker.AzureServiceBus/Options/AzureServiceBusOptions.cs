@@ -2,29 +2,27 @@
 using FrameBox.Core.Inbox.Models;
 using FrameBox.Core.Outbox.Models;
 
-namespace FrameBox.MessageBroker.RabbitMQ.Common.Options;
+namespace FrameBox.MessageBroker.AzureServiceBus.Options;
 
-public class RabbitMQOptions
+public class AzureServiceBusOptions
 {
-    public string OutboxExchangeName { get; set; } = "outbox_topic";
-    
-    public string OutboxQueueName { get; set; } = "outbox_queue";
-    
-    public string OutboxTopicName { get; set; } = "outbox_queue.#";
+    public string OutboxTopicName { get; set; } = "framebox-outbox";
+
+    public string OutboxSubscriptionName { get; set; } = "framebox-outbox-subscription";
+
+    public string InboxQueueName { get; set; } = "framebox-inbox-queue";
 
     public int OutboxMaxConcurrency { get; set; } = 5000;
 
-    public string InboxQueueName { get; set; } = "inbox_queue";
-
     public int InboxMaxConcurrency { get; set; } = 1000;
-    
-    public string GetExchangeName<TMessage>() where TMessage : class, IMessage => typeof(TMessage) switch
+
+    public bool IsTopicSubscription<TMessage>() where TMessage : class, IMessage => typeof(TMessage) switch
     {
-        var t when t == typeof(OutboxMessage) => OutboxExchangeName,
-        var t when t == typeof(InboxMessage) => string.Empty,
+        var t when t == typeof(OutboxMessage) => true,
+        var t when t == typeof(InboxMessage) => false,
         _ => throw new InvalidOperationException("Unsupported message type.")
     };
-    
+
     public string GetTopicName<TMessage>() where TMessage : class, IMessage => typeof(TMessage) switch
     {
         var t when t == typeof(OutboxMessage) => OutboxTopicName,
@@ -32,10 +30,17 @@ public class RabbitMQOptions
         _ => throw new InvalidOperationException("Unsupported message type.")
     };
 
+    public string GetSubscriptionName<TMessage>() where TMessage : class, IMessage => typeof(TMessage) switch
+    {
+        var t when t == typeof(OutboxMessage) => OutboxSubscriptionName,
+        var t when t == typeof(InboxMessage) => string.Empty,
+        _ => throw new InvalidOperationException("Unsupported message type.")
+    };
+
     public string GetQueueName<TMessage>() where TMessage : class, IMessage => typeof(TMessage) switch
     {
+        var t when t == typeof(OutboxMessage) => string.Empty,
         var t when t == typeof(InboxMessage) => InboxQueueName,
-        var t when t == typeof(OutboxMessage) => OutboxQueueName,
         _ => throw new InvalidOperationException("Unsupported message type.")
     };
 

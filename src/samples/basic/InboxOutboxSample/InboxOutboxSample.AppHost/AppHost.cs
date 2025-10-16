@@ -9,8 +9,14 @@ var paymentsDb = builder.AddPostgres("payments-db")
 var username = builder.AddParameter("rabbitmq-management-username", secret: true);
 var password = builder.AddParameter("rabbitmq-management-password", secret: true);
 
-var rabbitMq = builder.AddRabbitMQ("rabbitmq", username, password)
-    .WithManagementPlugin();
+//var rabbitMq = builder.AddRabbitMQ("rabbitmq", username, password)
+//    .WithManagementPlugin();
+
+var azureServiceBus = builder.AddAzureServiceBus("servicebus")
+    .RunAsEmulator(container =>
+    {
+        container.WithConfigurationFile(path: "ResourcesConfig/servicebus-config.json");
+    });
 
 var migrationsService = builder.AddProject<Projects.InboxOutboxSample_Migrations>("migrations")
     .WithReference(paymentsDb)
@@ -18,8 +24,10 @@ var migrationsService = builder.AddProject<Projects.InboxOutboxSample_Migrations
 
 var apiService = builder.AddProject<Projects.InboxOutboxSample_ApiService>("apiservice")
     .WithReference(paymentsDb)
-    .WithReference(rabbitMq)
-    .WaitFor(rabbitMq)
+    //.WithReference(rabbitMq)
+    .WithReference(azureServiceBus)
+    //.WaitFor(rabbitMq)
+    .WaitFor(azureServiceBus)
     .WaitForCompletion(migrationsService)
     .WithHttpHealthCheck("/health");
 
