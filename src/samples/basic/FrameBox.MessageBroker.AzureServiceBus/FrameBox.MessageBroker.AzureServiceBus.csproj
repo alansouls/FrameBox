@@ -4,6 +4,21 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		
+		<!-- Package Information -->
+		<PackageId>FrameBox.MessageBroker.AzureServiceBus</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>alansouls</Authors>
+		<Description>Azure Service Bus message broker implementation for FrameBox providing reliable message publishing and consumption.</Description>
+		<PackageTags>framebox;azureservicebus;servicebus;messagebroker;messaging;publisher;consumer;azure</PackageTags>
+		<RepositoryUrl>https://github.com/alansouls/FrameBox</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/alansouls/FrameBox</PackageProjectUrl>
+		
+		<!-- Generate package metadata -->
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 	</PropertyGroup>
 
 	<ItemGroup>
