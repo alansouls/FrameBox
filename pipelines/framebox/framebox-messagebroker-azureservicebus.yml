@@ -1,0 +1,33 @@
+name: FrameBox.MessageBroker.AzureServiceBus Package Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/samples/basic/FrameBox.MessageBroker.AzureServiceBus/**'
+      - 'pipelines/framebox/framebox-messagebroker-azureservicebus.yml'
+      - 'pipelines/framebox/templates/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/samples/basic/FrameBox.MessageBroker.AzureServiceBus/**'
+      - 'pipelines/framebox/framebox-messagebroker-azureservicebus.yml'
+      - 'pipelines/framebox/templates/**'
+  workflow_dispatch:
+    inputs:
+      force-publish:
+        description: 'Force publish to NuGet even on non-main branch'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build-and-test:
+    uses: ./.github/workflows/dotnet-package.yml
+    with:
+      project-path: 'src/samples/basic/FrameBox.MessageBroker.AzureServiceBus/FrameBox.MessageBroker.AzureServiceBus.csproj'
+      package-name: 'FrameBox.MessageBroker.AzureServiceBus'
+      dotnet-version: '9.0.x'
+      run-tests: false  # No tests currently exist
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

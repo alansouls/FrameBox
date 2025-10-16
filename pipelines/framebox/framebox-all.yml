@@ -49,7 +49,7 @@ jobs:
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
-  framebox-messagebroker:
+  framebox-messagebroker-rabbitmq:
     uses: ./.github/workflows/dotnet-package.yml
     with:
       project-path: 'src/framebox/FrameBox.MessageBroker.RabbitMQ/FrameBox.MessageBroker.RabbitMQ.csproj'
@@ -59,11 +59,31 @@ jobs:
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
+  framebox-messagebroker-azureservicebus:
+    uses: ./.github/workflows/dotnet-package.yml
+    with:
+      project-path: 'src/samples/basic/FrameBox.MessageBroker.AzureServiceBus/FrameBox.MessageBroker.AzureServiceBus.csproj'
+      package-name: 'FrameBox.MessageBroker.AzureServiceBus'
+      dotnet-version: '9.0.x'
+      run-tests: false
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+  framebox-messagebroker-inprocess:
+    uses: ./.github/workflows/dotnet-package.yml
+    with:
+      project-path: 'src/samples/basic/FrameBox.MessageBroker.InProcess/FrameBox.MessageBroker.InProcess.csproj'
+      package-name: 'FrameBox.MessageBroker.InProcess'
+      dotnet-version: '9.0.x'
+      run-tests: false
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
   # Integration test that builds the entire solution to ensure packages work together
   integration-test:
     runs-on: ubuntu-latest
-    needs: [framebox-core, framebox-storage, framebox-messagebroker]
-    if: always() && (needs.framebox-core.result == 'success' || needs.framebox-storage.result == 'success' || needs.framebox-messagebroker.result == 'success')
+    needs: [framebox-core, framebox-storage, framebox-messagebroker-rabbitmq, framebox-messagebroker-azureservicebus, framebox-messagebroker-inprocess]
+    if: always() && (needs.framebox-core.result == 'success' || needs.framebox-storage.result == 'success' || needs.framebox-messagebroker-rabbitmq.result == 'success' || needs.framebox-messagebroker-azureservicebus.result == 'success' || needs.framebox-messagebroker-inprocess.result == 'success')
     
     steps:
     - name: Checkout code
@@ -101,20 +121,22 @@ jobs:
   # Report overall status
   status-report:
     runs-on: ubuntu-latest
-    needs: [framebox-core, framebox-storage, framebox-messagebroker, integration-test]
+    needs: [framebox-core, framebox-storage, framebox-messagebroker-rabbitmq, framebox-messagebroker-azureservicebus, framebox-messagebroker-inprocess, integration-test]
     if: always()
     
     steps:
     - name: Report Success
-      if: needs.framebox-core.result == 'success' && needs.framebox-storage.result == 'success' && needs.framebox-messagebroker.result == 'success' && needs.integration-test.result == 'success'
+      if: needs.framebox-core.result == 'success' && needs.framebox-storage.result == 'success' && needs.framebox-messagebroker-rabbitmq.result == 'success' && needs.framebox-messagebroker-azureservicebus.result == 'success' && needs.framebox-messagebroker-inprocess.result == 'success' && needs.integration-test.result == 'success'
       run: echo "All FrameBox packages built and tested successfully!"
       
     - name: Report Failure
-      if: needs.framebox-core.result == 'failure' || needs.framebox-storage.result == 'failure' || needs.framebox-messagebroker.result == 'failure' || needs.integration-test.result == 'failure'
+      if: needs.framebox-core.result == 'failure' || needs.framebox-storage.result == 'failure' || needs.framebox-messagebroker-rabbitmq.result == 'failure' || needs.framebox-messagebroker-azureservicebus.result == 'failure' || needs.framebox-messagebroker-inprocess.result == 'failure' || needs.integration-test.result == 'failure'
       run: |
         echo "Some FrameBox packages failed to build:"
         echo "FrameBox.Core: ${{ needs.framebox-core.result }}"
         echo "FrameBox.Storage.EFCore: ${{ needs.framebox-storage.result }}"
-        echo "FrameBox.MessageBroker.RabbitMQ: ${{ needs.framebox-messagebroker.result }}"
+        echo "FrameBox.MessageBroker.RabbitMQ: ${{ needs.framebox-messagebroker-rabbitmq.result }}"
+        echo "FrameBox.MessageBroker.AzureServiceBus: ${{ needs.framebox-messagebroker-azureservicebus.result }}"
+        echo "FrameBox.MessageBroker.InProcess: ${{ needs.framebox-messagebroker-inprocess.result }}"
         echo "Integration Test: ${{ needs.integration-test.result }}"
         exit 1
