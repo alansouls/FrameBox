@@ -50,7 +50,7 @@ internal class RabbitMQListener : IHostedService
     private Task ListenToOutboxMessages(CancellationToken cancellationToken)
     {
         return ListenToMessages<OutboxMessage, IOutboxHandler>(
-            (data) => OutboxMessage.FromJson(data),
+            (data) => OutboxMessage.FromJson(data.Span),
             _outboxListenerCompletionSource,
             cancellationToken);
     }
@@ -58,13 +58,13 @@ internal class RabbitMQListener : IHostedService
     private Task ListenToInboxMessages(CancellationToken cancellationToken)
     {
         return ListenToMessages<InboxMessage, IInboxHandler>(
-            (data) => InboxMessage.FromJson(data),
+            (data) => InboxMessage.FromJson(data.Span),
             _inboxListenerCompletionSource,
             cancellationToken);
     }
 
     private async Task ListenToMessages<TMessage, TMessageHandler>(
-        Func<ReadOnlySpan<byte>, TMessage> deserializer,
+        Func<ReadOnlyMemory<byte>, TMessage> deserializer,
         TaskCompletionSource listenerCompletionSource,
         CancellationToken cancellationToken) where TMessage : class, IMessage
         where TMessageHandler : IMessageHandler<TMessage>
@@ -103,7 +103,7 @@ internal class RabbitMQListener : IHostedService
 
             consumer.ReceivedAsync += async (sender, eventArgs) =>
             {
-                var message = deserializer(eventArgs.Body.Span);
+                var message = deserializer(eventArgs.Body);
                 using var messageScope = _serviceProvider.CreateScope();
                 var handler = messageScope.ServiceProvider.GetRequiredService<TMessageHandler>();
                 await handler.HandleMessage(message, eventArgs.CancellationToken);

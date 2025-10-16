@@ -1,28 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    
-    <!-- Package Information -->
-    <PackageId>FrameBox.MessageBroker.InProcess</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>alansouls</Authors>
-    <Description>In-process message broker implementation for FrameBox providing lightweight message publishing and consumption for development and testing.</Description>
-    <PackageTags>framebox;inprocess;messagebroker;messaging;publisher;consumer;testing;development</PackageTags>
-    <RepositoryUrl>https://github.com/alansouls/FrameBox</RepositoryUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/alansouls/FrameBox</PackageProjectUrl>
-    
-    <!-- Generate package metadata -->
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\framebox\FrameBox.Core\FrameBox.Core.csproj" />
-  </ItemGroup>
+		<!-- Language version configuration -->
+		<LangVersion Condition="'$(TargetFramework)' == 'net8.0'">13.0</LangVersion>
+
+		<!-- Package Information -->
+		<PackageId>FrameBox.MessageBroker.InProcess</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>alansouls</Authors>
+		<Description>In-process message broker implementation for FrameBox providing lightweight message publishing and consumption for development and testing.</Description>
+		<PackageTags>framebox;inprocess;messagebroker;messaging;publisher;consumer;testing;development</PackageTags>
+		<RepositoryUrl>https://github.com/alansouls/FrameBox</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/alansouls/FrameBox</PackageProjectUrl>
+
+		<!-- Generate package metadata -->
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\framebox\FrameBox.Core\FrameBox.Core.csproj" />
+	</ItemGroup>
 
 </Project>

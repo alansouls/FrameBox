@@ -1,10 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		
+
+		<!-- Language version configuration -->
+		<LangVersion Condition="'$(TargetFramework)' == 'net8.0'">13.0</LangVersion>
+
 		<!-- Package Information -->
 		<PackageId>FrameBox.MessageBroker.AzureServiceBus</PackageId>
 		<Version>1.0.0</Version>
@@ -14,7 +17,7 @@
 		<RepositoryUrl>https://github.com/alansouls/FrameBox</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/alansouls/FrameBox</PackageProjectUrl>
-		
+
 		<!-- Generate package metadata -->
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<IncludeSymbols>true</IncludeSymbols>
@@ -22,9 +25,17 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+		<PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
 		<PackageReference Include="Microsoft.Extensions.Options" Version="9.0.8" />
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.8" />
-		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
 	</ItemGroup>
 
 	<ItemGroup>

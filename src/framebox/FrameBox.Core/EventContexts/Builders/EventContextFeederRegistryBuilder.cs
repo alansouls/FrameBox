@@ -24,6 +24,7 @@ public class EventContextFeederRegistryBuilder
         return this;
     }
 
+#if NET9_0_OR_GREATER
     public EventContextFeederRegistryBuilder AddFeeder<TFactory>(params IEnumerable<Type> eventTypes)
         where TFactory : class, IEventContextFeeder
     {
@@ -36,6 +37,20 @@ public class EventContextFeederRegistryBuilder
         _services.AddScoped(provider => new EventContextFactoryRegistry(provider.GetRequiredService<TFactory>(), eventTypes));
         return this;
     }
+#else
+    public EventContextFeederRegistryBuilder AddFeeder<TFactory>(params Type[] eventTypes)
+        where TFactory : class, IEventContextFeeder
+    {
+        if (eventTypes.Any(e => !typeof(IEvent).IsAssignableFrom(e)))
+        {
+            throw new ArgumentException("All event types must implement IEvent interface.", nameof(eventTypes));
+        }
+
+        _services.TryAddScoped<TFactory>();
+        _services.AddScoped(provider => new EventContextFactoryRegistry(provider.GetRequiredService<TFactory>(), eventTypes));
+        return this;
+    }
+#endif
 
     public EventContextFeederRegistryBuilder AddFeeder<TFactory>()
         where TFactory : class, IEventContextFeeder

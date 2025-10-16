@@ -41,7 +41,7 @@ internal class InProcessListener : BackgroundService
     }
 
     private async Task ListenToMessages<TMessage, TMessageHandler>(
-        Func<ReadOnlySpan<byte>, TMessage> deserializer,
+        Func<byte[], TMessage> deserializer,
         CancellationToken cancellationToken) where TMessage : class, IMessage
         where TMessageHandler : IMessageHandler<TMessage>
     {
