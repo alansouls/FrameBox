@@ -4,7 +4,7 @@ using FrameBox.Core.Inbox.Interfaces;
 using FrameBox.Core.Inbox.Models;
 using FrameBox.Core.Outbox.Interfaces;
 using FrameBox.Core.Outbox.Models;
-using FrameBox.MessageBroker.RabbitMQ.Common.Options;
+using FrameBox.MessageBroker.RabbitMQ.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -13,7 +13,7 @@ using RabbitMQ.Client.Events;
 using System.Data.Common;
 using System.Text.Json;
 
-namespace FrameBox.MessageBroker.RabbitMQ.Common.Services;
+namespace FrameBox.MessageBroker.RabbitMQ.Services;
 
 internal class RabbitMQListener : IHostedService
 {
@@ -73,8 +73,10 @@ internal class RabbitMQListener : IHostedService
         {
             using var scope = _serviceProvider.CreateScope();
 
-            var connection = scope.ServiceProvider.GetRequiredService<IConnection>();
             var options = scope.ServiceProvider.GetRequiredService<IOptions<RabbitMQOptions>>().Value;
+            var connection = string.IsNullOrEmpty(options.ConnectionKey) ?
+                scope.ServiceProvider.GetRequiredService<IConnection>() :
+                scope.ServiceProvider.GetRequiredKeyedService<IConnection>(options.ConnectionKey);
 
             var channel = await connection.CreateChannelAsync(new CreateChannelOptions(
                     publisherConfirmationsEnabled: false, publisherConfirmationTrackingEnabled: false,

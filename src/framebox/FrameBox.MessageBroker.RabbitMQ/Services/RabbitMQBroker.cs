@@ -2,16 +2,16 @@
 using FrameBox.Core.Common.Interfaces;
 using FrameBox.Core.Inbox.Models;
 using FrameBox.Core.Outbox.Models;
-using FrameBox.MessageBroker.RabbitMQ.Common.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
 using System.Text.Json;
-using FrameBox.MessageBroker.RabbitMQ.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using FrameBox.MessageBroker.RabbitMQ.Options;
+using FrameBox.MessageBroker.RabbitMQ.Interfaces;
 
-namespace FrameBox.MessageBroker.RabbitMQ.Common.Services;
+namespace FrameBox.MessageBroker.RabbitMQ.Services;
 
 public class RabbitMQBroker : IMessageBroker
 {
@@ -21,12 +21,14 @@ public class RabbitMQBroker : IMessageBroker
     private IChannel? _channel;
     private readonly IServiceProvider _serviceProvider;
 
-    public RabbitMQBroker(IConnection connection, IOptions<RabbitMQOptions> options, ILogger<RabbitMQBroker> logger, IServiceProvider serviceProvider)
+    public RabbitMQBroker(IOptions<RabbitMQOptions> options, ILogger<RabbitMQBroker> logger, IServiceProvider serviceProvider)
     {
-        _connection = connection;
         _options = options.Value;
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _connection = string.IsNullOrEmpty(_options.ConnectionKey) ?
+            serviceProvider.GetRequiredService<IConnection>() :
+            serviceProvider.GetRequiredKeyedService<IConnection>(_options.ConnectionKey);
     }
 
     public async Task SendMessagesAsync<T>(IEnumerable<T> messages, CancellationToken cancellationToken)
@@ -43,13 +45,13 @@ public class RabbitMQBroker : IMessageBroker
 
             throw new FailedToSendMessagesException<T>(messages, ex);
         }
-        
+
         var routingKeyFactory = _serviceProvider.GetRequiredService<IRoutingKeyFactory<T>>();
 
         var failedMessages = (await Task.WhenAll(messages.Select(async message =>
         {
             var messageBody = message.ToJson();
-            
+
             var routingKey = routingKeyFactory.CreateRoutingKey(message);
 
             try

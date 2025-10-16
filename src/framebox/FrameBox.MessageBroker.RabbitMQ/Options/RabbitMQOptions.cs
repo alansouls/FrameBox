@@ -2,10 +2,11 @@
 using FrameBox.Core.Inbox.Models;
 using FrameBox.Core.Outbox.Models;
 
-namespace FrameBox.MessageBroker.RabbitMQ.Common.Options;
+namespace FrameBox.MessageBroker.RabbitMQ.Options;
 
 public class RabbitMQOptions
 {
+    public string? ConnectionKey { get; set; }
     public string OutboxExchangeName { get; set; } = "outbox_topic";
     
     public string OutboxQueueName { get; set; } = "outbox_queue";
