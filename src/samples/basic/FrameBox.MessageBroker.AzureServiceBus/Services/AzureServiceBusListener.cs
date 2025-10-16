@@ -47,8 +47,10 @@ internal class AzureServiceBusListener : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
 
-        var client = scope.ServiceProvider.GetRequiredService<ServiceBusClient>();
         var options = scope.ServiceProvider.GetRequiredService<IOptions<AzureServiceBusOptions>>().Value;
+        var client = string.IsNullOrEmpty(options.ConnectionKey) ?
+            scope.ServiceProvider.GetRequiredService<ServiceBusClient>() :
+            scope.ServiceProvider.GetRequiredKeyedService<ServiceBusClient>(options.ConnectionKey);
 
         var listener = options.IsTopicSubscription<TMessage>() ?
             client.CreateReceiver(options.GetTopicName<TMessage>(), options.GetSubscriptionName<TMessage>()) :

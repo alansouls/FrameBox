@@ -73,8 +73,10 @@ internal class RabbitMQListener : IHostedService
         {
             using var scope = _serviceProvider.CreateScope();
 
-            var connection = scope.ServiceProvider.GetRequiredService<IConnection>();
             var options = scope.ServiceProvider.GetRequiredService<IOptions<RabbitMQOptions>>().Value;
+            var connection = string.IsNullOrEmpty(options.ConnectionKey) ?
+                scope.ServiceProvider.GetRequiredService<IConnection>() :
+                scope.ServiceProvider.GetRequiredKeyedService<IConnection>(options.ConnectionKey);
 
             var channel = await connection.CreateChannelAsync(new CreateChannelOptions(
                     publisherConfirmationsEnabled: false, publisherConfirmationTrackingEnabled: false,

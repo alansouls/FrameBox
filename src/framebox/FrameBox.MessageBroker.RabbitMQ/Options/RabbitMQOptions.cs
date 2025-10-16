@@ -6,6 +6,7 @@ namespace FrameBox.MessageBroker.RabbitMQ.Options;
 
 public class RabbitMQOptions
 {
+    public string? ConnectionKey { get; set; }
     public string OutboxExchangeName { get; set; } = "outbox_topic";
     
     public string OutboxQueueName { get; set; } = "outbox_queue";

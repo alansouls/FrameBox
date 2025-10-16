@@ -2,6 +2,7 @@
 using FrameBox.Core.Common.Exceptions;
 using FrameBox.Core.Common.Interfaces;
 using FrameBox.MessageBroker.AzureServiceBus.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace FrameBox.MessageBroker.AzureServiceBus.Services;
@@ -11,10 +12,12 @@ public class AzureServiceBusBroker : IMessageBroker
     private readonly ServiceBusClient _client;
     private readonly AzureServiceBusOptions _options;
 
-    public AzureServiceBusBroker(ServiceBusClient client, IOptions<AzureServiceBusOptions> options)
+    public AzureServiceBusBroker(IServiceProvider serviceProvider, IOptions<AzureServiceBusOptions> options)
     {
-        _client = client;
         _options = options.Value;
+        _client = string.IsNullOrEmpty(_options.ConnectionKey) ?
+            serviceProvider.GetRequiredService<ServiceBusClient>() :
+            serviceProvider.GetRequiredKeyedService<ServiceBusClient>(_options.ConnectionKey);
     }
 
     public async Task SendMessagesAsync<T>(IEnumerable<T> messages, CancellationToken cancellationToken) where T : class, IMessage
@@ -26,7 +29,7 @@ public class AzureServiceBusBroker : IMessageBroker
             return;
         }
 
-        var sender = _client.CreateSender(_options.GetTopicName<T>());
+        var sender = _client.CreateSender(_options.IsTopicSubscription<T>() ? _options.GetTopicName<T>() : _options.GetQueueName<T>());
         var failedMessages = new List<T>();
         var batch = messageList;
         while (batch.Count > 0)
@@ -40,7 +43,7 @@ public class AzureServiceBusBroker : IMessageBroker
 
                 var serviceBusMessage = new ServiceBusMessage()
                 {
-                    MessageId = message.Id.ToString(),
+                    CorrelationId = message.Id.ToString(),
                     Body = new BinaryData(messageJson),
                     ContentType = "application/json"
                 };

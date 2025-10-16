@@ -6,6 +6,7 @@ namespace FrameBox.MessageBroker.AzureServiceBus.Options;
 
 public class AzureServiceBusOptions
 {
+    public string? ConnectionKey { get; set; }
     public string OutboxTopicName { get; set; } = "framebox-outbox";
 
     public string OutboxSubscriptionName { get; set; } = "framebox-outbox-subscription";
