@@ -13,16 +13,24 @@ public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage
 {
     private readonly string _schemaName;
     private readonly string _tableName;
+    private readonly bool _excludeFromMigration;
 
-    public OutboxMessageConfiguration(string? schemaName, string? tableName = null)
+    public OutboxMessageConfiguration(string? schemaName, string? tableName = null, bool excludeFromMigration = false)
     {
         _schemaName = schemaName ?? "FrameBox";
         _tableName = tableName ?? "OutboxMessages";
+        _excludeFromMigration = excludeFromMigration;
     }
 
     public void Configure(EntityTypeBuilder<OutboxMessage> builder)
     {
-        builder.ToTable(_tableName, _schemaName);
+        builder.ToTable(_tableName, _schemaName, action =>
+        {
+            if (_excludeFromMigration)
+            {
+                action.ExcludeFromMigrations();
+            }
+        });
 
         builder.Ignore(p => p.Id);
 

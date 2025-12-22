@@ -5,23 +5,23 @@ namespace FrameBox.Storage.EFCore.Common.Extensions;
 
 public static class ModelBuilderExtensions
 {
-    public static void ConfigureOutbox(this ModelBuilder modelBuilder, string? tableName = null, string? schemaName = null)
+    public static void ConfigureOutbox(this ModelBuilder modelBuilder, string? tableName = null, string? schemaName = null, bool excludeFromMigrations = false)
     {
-        var configuration = new OutboxMessageConfiguration(schemaName, tableName);
+        var configuration = new OutboxMessageConfiguration(schemaName, tableName, excludeFromMigrations);
 
         modelBuilder.ApplyConfiguration(configuration);
     }
 
-    public static void ConfigureInbox(this ModelBuilder modelBuilder, string? tableName = null, string? schemaName = null)
+    public static void ConfigureInbox(this ModelBuilder modelBuilder, string? tableName = null, string? schemaName = null, bool excludeFromMigrations = false)
     {
-        var configuration = new InboxMessageConfiguration(schemaName, tableName);
+        var configuration = new InboxMessageConfiguration(schemaName, tableName, excludeFromMigrations);
 
         modelBuilder.ApplyConfiguration(configuration);
     }
 
-    public static void ConfigureEventContext(this ModelBuilder modelBuilder, string? tableName = null, string? schemaName = null)
+    public static void ConfigureEventContext(this ModelBuilder modelBuilder, string? tableName = null, string? schemaName = null, bool excludeFromMigrations = false)
     {
-        var configuration = new EventContextDbModelConfiguration(schemaName, tableName);
+        var configuration = new EventContextDbModelConfiguration(schemaName, tableName, excludeFromMigrations);
 
         modelBuilder.ApplyConfiguration(configuration);
     }

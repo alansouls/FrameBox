@@ -8,16 +8,24 @@ public class EventContextDbModelConfiguration : IEntityTypeConfiguration<EventCo
 {
     private readonly string _schemaName;
     private readonly string _tableName;
+    private readonly bool _excludeFromMigrations;
 
-    public EventContextDbModelConfiguration(string? schemaName = null, string? tableName = null)
+    public EventContextDbModelConfiguration(string? schemaName = null, string? tableName = null, bool excludeFromMigrations = false)
     {
         _schemaName = schemaName ?? "FrameBox";
         _tableName = tableName ?? "EventContexts";
+        _excludeFromMigrations = excludeFromMigrations;
     }
 
     public void Configure(EntityTypeBuilder<EventContextDbModel> builder)
     {
-        builder.ToTable(_tableName, _schemaName);
+        builder.ToTable(_tableName, _schemaName, action =>
+        {
+            if (_excludeFromMigrations)
+            {
+                action.ExcludeFromMigrations();
+            }
+        });
 
         builder.HasKey(b => b.Id);
 

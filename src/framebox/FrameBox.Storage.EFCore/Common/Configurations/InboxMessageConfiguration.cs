@@ -9,16 +9,24 @@ public class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMessage>
 {
     private readonly string _schemaName;
     private readonly string _tableName;
+    private readonly bool _excludeFromMigrations;
 
-    public InboxMessageConfiguration(string? schemaName, string? tableName = null)
+    public InboxMessageConfiguration(string? schemaName, string? tableName = null, bool excludeFromMigrations = false)
     {
         _schemaName = schemaName ?? "FrameBox";
         _tableName = tableName ?? "InboxMessages";
+        _excludeFromMigrations = excludeFromMigrations;
     }
 
     public void Configure(EntityTypeBuilder<InboxMessage> builder)
     {
-        builder.ToTable(_tableName, _schemaName);
+        builder.ToTable(_tableName, _schemaName, action =>
+        {
+            if (_excludeFromMigrations)
+            {
+                action.ExcludeFromMigrations();
+            }
+        });
 
         builder.HasKey(p => p.Id);
 
