@@ -1,5 +1,4 @@
 ﻿using FrameBox.Core.Common.Interfaces;
-using FrameBox.Core.Events.Interfaces;
 using FrameBox.Core.Inbox.Interfaces;
 using FrameBox.Core.Inbox.Models;
 using FrameBox.Core.Outbox.Interfaces;
@@ -10,8 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Data.Common;
-using System.Text.Json;
+using System.Text;
 
 namespace FrameBox.MessageBroker.RabbitMQ.Services;
 
@@ -105,6 +103,8 @@ internal class RabbitMQListener : IHostedService
             {
                 var message = deserializer(eventArgs.Body);
                 using var messageScope = _serviceProvider.CreateScope();
+                var headerHolder = messageScope.ServiceProvider.GetRequiredService<MessageHeaderHolder>();
+                FillHeaders(eventArgs, message, headerHolder);
                 var handler = messageScope.ServiceProvider.GetRequiredService<TMessageHandler>();
                 await handler.HandleMessage(message, eventArgs.CancellationToken);
                 await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false,
@@ -121,6 +121,21 @@ internal class RabbitMQListener : IHostedService
         finally
         {
             listenerCompletionSource.SetResult();
+        }
+    }
+
+    private static void FillHeaders<TMessage>(BasicDeliverEventArgs eventArgs, TMessage message, MessageHeaderHolder headerHolder) where TMessage : class, IMessage
+    {
+        foreach (var header in eventArgs.BasicProperties.Headers ?? new Dictionary<string, object?>())
+        {
+            if (header.Value is string headerValue)
+            {
+                headerHolder.AddHeader(message.EventId, header.Key, headerValue);
+            }
+            else if (header.Value is byte[] rawBytes)
+            {
+                headerHolder.AddHeader(message.EventId, header.Key, Encoding.UTF8.GetString(rawBytes));
+            }
         }
     }
 }

@@ -1,15 +1,12 @@
 ﻿using FrameBox.Core.Common.Exceptions;
 using FrameBox.Core.Common.Interfaces;
-using FrameBox.Core.Inbox.Models;
-using FrameBox.Core.Outbox.Models;
+using FrameBox.MessageBroker.RabbitMQ.Interfaces;
+using FrameBox.MessageBroker.RabbitMQ.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
-using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
-using FrameBox.MessageBroker.RabbitMQ.Options;
-using FrameBox.MessageBroker.RabbitMQ.Interfaces;
 
 namespace FrameBox.MessageBroker.RabbitMQ.Services;
 
@@ -20,8 +17,9 @@ public class RabbitMQBroker : IMessageBroker
     private readonly ILogger<RabbitMQBroker> _logger;
     private IChannel? _channel;
     private readonly IServiceProvider _serviceProvider;
+    private readonly MessageHeaderHolder _messageHeaderHolder;
 
-    public RabbitMQBroker(IOptions<RabbitMQOptions> options, ILogger<RabbitMQBroker> logger, IServiceProvider serviceProvider)
+    public RabbitMQBroker(IOptions<RabbitMQOptions> options, ILogger<RabbitMQBroker> logger, IServiceProvider serviceProvider, MessageHeaderHolder messageHeaderHolder)
     {
         _options = options.Value;
         _logger = logger;
@@ -29,6 +27,7 @@ public class RabbitMQBroker : IMessageBroker
         _connection = string.IsNullOrEmpty(_options.ConnectionKey) ?
             serviceProvider.GetRequiredService<IConnection>() :
             serviceProvider.GetRequiredKeyedService<IConnection>(_options.ConnectionKey);
+        _messageHeaderHolder = messageHeaderHolder;
     }
 
     public async Task SendMessagesAsync<T>(IEnumerable<T> messages, CancellationToken cancellationToken)
@@ -56,8 +55,19 @@ public class RabbitMQBroker : IMessageBroker
 
             try
             {
-                await _channel.BasicPublishAsync(exchange: exchangeName, routingKey,
-                    messageBody, cancellationToken);
+                var headers = _messageHeaderHolder.GetHeaders(message.EventId);
+
+                var basicProperties = new BasicProperties
+                {
+                    Headers = headers.ToDictionary<KeyValuePair<string, string>, string, object?>(s => s.Key, s => s.Value),
+                };
+
+                await _channel.BasicPublishAsync(exchangeName,
+                    routingKey,
+                    mandatory: false,
+                    basicProperties,
+                    messageBody,
+                    cancellationToken);
             }
             catch (Exception ex)
             {

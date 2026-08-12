@@ -16,16 +16,18 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
     private readonly TimeProvider _timeProvider;
     private readonly IServiceProvider _serviceProvider;
     private readonly IEventContextManager _eventContextManager;
+    private readonly IEventContextStorageFactory _eventContextStorageFactory;
 
     public OutboxMessagesInterceptors(IOutboxMessageFactory messageFactory, IMessageBroker messageBroker,
         IEventContextManager eventContextManager,
-        TimeProvider timeProvider, IServiceProvider serviceProvider)
+        TimeProvider timeProvider, IServiceProvider serviceProvider, IEventContextStorageFactory eventContextStorageFactory)
     {
         _messageFactory = messageFactory;
         _messageBroker = messageBroker;
         _timeProvider = timeProvider;
         _serviceProvider = serviceProvider;
         _eventContextManager = eventContextManager;
+        _eventContextStorageFactory = eventContextStorageFactory;
     }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
@@ -56,9 +58,8 @@ internal class OutboxMessagesInterceptors : SaveChangesInterceptor
 
         if (eventContexts.Count > 0)
         {
-            using var eventContextScope = _serviceProvider.CreateScope();
-            var scopedEventContextStorage = eventContextScope.ServiceProvider.GetRequiredService<IEventContextStorage>();
-            await scopedEventContextStorage.AddAsync(eventContexts, cancellationToken);
+            using var storageHolder = _eventContextStorageFactory.GetStorage();
+            await storageHolder.Storage.AddAsync(eventContexts, cancellationToken);
         }
 
         var sendingDate = _timeProvider.GetUtcNow();

@@ -1,7 +1,10 @@
 ﻿using FrameBox.Core.Common.Interfaces;
+using FrameBox.Core.EventContexts.Interfaces;
+using FrameBox.Core.EventContexts.Services;
 using FrameBox.Core.Inbox.Models;
 using FrameBox.Core.Outbox.Models;
 using FrameBox.MessageBroker.RabbitMQ.Defaults;
+using FrameBox.MessageBroker.RabbitMQ.EventContexts;
 using FrameBox.MessageBroker.RabbitMQ.Interfaces;
 using FrameBox.MessageBroker.RabbitMQ.Options;
 using FrameBox.MessageBroker.RabbitMQ.Services;
@@ -23,7 +26,8 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<RabbitMQOptions>(options => configuration.GetSection(nameof(RabbitMQOptions)).Bind(options));
         services.AddScoped<IMessageBroker, RabbitMQBroker>();
-        
+        services.TryAddScoped<MessageHeaderHolder>();
+
         services.TryAddScoped<IRoutingKeyFactory<OutboxMessage>, DefaultOutboxRoutingKeyFactory>();
         services.TryAddScoped<IRoutingKeyFactory<InboxMessage>, DefaultInboxRoutingKeyFactory>();
 
@@ -40,6 +44,21 @@ public static class ServiceCollectionExtensions
     {
         services.Configure<RabbitMQOptions>(options => configuration.GetSection(nameof(RabbitMQOptions)).Bind(options));
         services.AddHostedService<RabbitMQListener>();
+        services.TryAddScoped<MessageHeaderHolder>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds an EventContextStorage implementation that feeds context from message headers
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="configuration"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddRabbitMQMessageHeaderEventContextStorage(this IServiceCollection services)
+    {
+        services.TryAddScoped<IEventContextStorage, MessageHeaderEventContextStorage>();
+        services.TryAddScoped<IEventContextStorageFactory, DefaultEventContextStorageFactory>();
 
         return services;
     }

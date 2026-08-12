@@ -1,4 +1,5 @@
 ﻿using FrameBox.Core.EventContexts.Interfaces;
+using FrameBox.Core.EventContexts.Services;
 using FrameBox.Core.Inbox.Interfaces;
 using FrameBox.Core.Outbox.Interfaces;
 using FrameBox.Storage.EFCore.Common.Interceptors;
@@ -34,6 +35,7 @@ public static class ServiceCollectionExtensions
     {
         services.TryAddScoped(serviceProvider => new InternalDbContextWrapper<IEventContextStorage>(serviceProvider.GetRequiredService<TDbContext>()));
         services.AddScoped<IEventContextStorage, EventContextDbContextStorage>();
+        services.TryAddScoped<IEventContextStorageFactory, EventContextStorageNewScopeFactory>();
 
         return services;
     }
