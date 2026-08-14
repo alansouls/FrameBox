@@ -1,6 +1,7 @@
 ﻿using FrameBox.Core.Common.Exceptions;
 using FrameBox.Core.Common.Interfaces;
-using FrameBox.MessageBroker.RabbitMQ.Interfaces;
+using FrameBox.Core.Inbox.Models;
+using FrameBox.Core.Outbox.Models;
 using FrameBox.MessageBroker.RabbitMQ.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -45,13 +46,11 @@ public class RabbitMQBroker : IMessageBroker
             throw new FailedToSendMessagesException<T>(messages, ex);
         }
 
-        var routingKeyFactory = _serviceProvider.GetRequiredService<IRoutingKeyFactory<T>>();
-
         var failedMessages = (await Task.WhenAll(messages.Select(async message =>
         {
             var messageBody = message.ToJson();
 
-            var routingKey = routingKeyFactory.CreateRoutingKey(message);
+            var routingKey = CreateRoutingKey(message);
 
             try
             {
@@ -83,6 +82,18 @@ public class RabbitMQBroker : IMessageBroker
             throw new FailedToSendMessagesException<T>(failedMessages!);
         }
     }
+
+    /// <summary>
+    /// Outbox messages are published to a topic exchange keyed by the event name, so listeners can bind
+    /// only to the events they handle. Inbox messages go through the default exchange, where the routing
+    /// key must be the queue name.
+    /// </summary>
+    private string CreateRoutingKey<T>(T message) where T : class, IMessage => message switch
+    {
+        OutboxMessage outboxMessage => outboxMessage.EventType,
+        InboxMessage => _options.InboxQueueName,
+        _ => throw new InvalidOperationException("Unsupported message type.")
+    };
 
     private async Task<IChannel> CreateChannel(string exchangeName, CancellationToken cancellationToken)
     {

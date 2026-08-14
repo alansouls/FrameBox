@@ -1,11 +1,7 @@
 ﻿using FrameBox.Core.Common.Interfaces;
 using FrameBox.Core.EventContexts.Interfaces;
 using FrameBox.Core.EventContexts.Services;
-using FrameBox.Core.Inbox.Models;
-using FrameBox.Core.Outbox.Models;
-using FrameBox.MessageBroker.RabbitMQ.Defaults;
 using FrameBox.MessageBroker.RabbitMQ.EventContexts;
-using FrameBox.MessageBroker.RabbitMQ.Interfaces;
 using FrameBox.MessageBroker.RabbitMQ.Options;
 using FrameBox.MessageBroker.RabbitMQ.Services;
 using Microsoft.Extensions.Configuration;
@@ -27,9 +23,6 @@ public static class ServiceCollectionExtensions
         services.Configure<RabbitMQOptions>(options => configuration.GetSection(nameof(RabbitMQOptions)).Bind(options));
         services.AddScoped<IMessageBroker, RabbitMQBroker>();
         services.TryAddScoped<MessageHeaderHolder>();
-
-        services.TryAddScoped<IRoutingKeyFactory<OutboxMessage>, DefaultOutboxRoutingKeyFactory>();
-        services.TryAddScoped<IRoutingKeyFactory<InboxMessage>, DefaultInboxRoutingKeyFactory>();
 
         return services;
     }

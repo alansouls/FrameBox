@@ -24,6 +24,7 @@ public sealed class EventRegistry : IEventRegistry
     private readonly Dictionary<Type, string> _eventHandlerNames = new();
     private readonly IEnumerable<EventHolder> _eventHolders;
     private readonly IEnumerable<EventHandlerHolder> _eventHandlerHolders;
+    private readonly string[] _handledEventNames;
 
     public EventRegistry(IEnumerable<EventHolder> eventHolders, IEnumerable<EventHandlerHolder> eventHandlerHolders)
     {
@@ -49,6 +50,15 @@ public sealed class EventRegistry : IEventRegistry
                 _eventHandlerNames[handlerType] = handlerName;
             }
         }
+
+        _handledEventNames = _eventHandlerTypes.Values
+            .SelectMany(handlerType => handlerType.GetInterfaces())
+            .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler<>))
+            .Select(i => i.GenericTypeArguments[0])
+            .Distinct()
+            .Select(GetEventName)
+            .Distinct()
+            .ToArray();
     }
 
     public Type? GetEventHandlerType(string handlerName)
@@ -69,5 +79,10 @@ public sealed class EventRegistry : IEventRegistry
     public string GetHandlerName(Type handlerType)
     {
         return _eventHandlerNames.GetValueOrDefault(handlerType) ?? throw new InvalidDataException("Event handler type not registered");
+    }
+
+    public IReadOnlyList<string> GetHandledEventNames()
+    {
+        return _handledEventNames;
     }
 }
