@@ -13,6 +13,7 @@ namespace FrameBox.Storage.EFCore.Common.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    
     public static IServiceCollection AddOutboxEntityFrameworkCoreStorage<TDbContext>(this IServiceCollection services)
         where TDbContext : DbContext
     {

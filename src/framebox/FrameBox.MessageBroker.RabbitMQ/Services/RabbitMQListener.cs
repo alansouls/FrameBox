@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
+using FrameBox.Core.Events.Interfaces;
 
 namespace FrameBox.MessageBroker.RabbitMQ.Services;
 
@@ -93,8 +94,25 @@ internal class RabbitMQListener : IHostedService
                 await channel.ExchangeDeclareAsync(exchangeName, ExchangeType.Topic, durable: true,
                     cancellationToken: cancellationToken);
 
-                await channel.QueueBindAsync(queueName, exchangeName, routingKey: options.GetTopicName<TMessage>(),
-                    cancellationToken: cancellationToken);
+                IReadOnlyList<string> routingKeys;
+
+                if (typeof(TMessage) == typeof(OutboxMessage))
+                {
+                    // Outbox messages are published keyed by event name, so bind only the events
+                    // this application actually has handlers for.
+                    var eventRegistry = scope.ServiceProvider.GetRequiredService<IEventRegistry>();
+                    routingKeys = eventRegistry.GetHandledEventNames();
+                }
+                else
+                {
+                    routingKeys = [queueName];
+                }
+
+                foreach (var routingKey in routingKeys)
+                {
+                    await channel.QueueBindAsync(queueName, exchangeName, routingKey,
+                        cancellationToken: cancellationToken);
+                }
             }
 
             var consumer = new AsyncEventingBasicConsumer(channel);

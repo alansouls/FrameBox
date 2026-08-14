@@ -9,4 +9,6 @@ public interface IEventRegistry
     string GetEventName(Type eventType);
 
     string GetHandlerName(Type handlerType);
+
+    IReadOnlyList<string> GetHandledEventNames();
 }

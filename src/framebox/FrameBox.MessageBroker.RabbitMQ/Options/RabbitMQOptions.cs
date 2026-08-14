@@ -10,8 +10,6 @@ public class RabbitMQOptions
     public string OutboxExchangeName { get; set; } = "outbox_topic";
     
     public string OutboxQueueName { get; set; } = "outbox_queue";
-    
-    public string OutboxTopicName { get; set; } = "outbox_queue.#";
 
     public int OutboxMaxConcurrency { get; set; } = 5000;
 
@@ -22,13 +20,6 @@ public class RabbitMQOptions
     public string GetExchangeName<TMessage>() where TMessage : class, IMessage => typeof(TMessage) switch
     {
         var t when t == typeof(OutboxMessage) => OutboxExchangeName,
-        var t when t == typeof(InboxMessage) => string.Empty,
-        _ => throw new InvalidOperationException("Unsupported message type.")
-    };
-    
-    public string GetTopicName<TMessage>() where TMessage : class, IMessage => typeof(TMessage) switch
-    {
-        var t when t == typeof(OutboxMessage) => OutboxTopicName,
         var t when t == typeof(InboxMessage) => string.Empty,
         _ => throw new InvalidOperationException("Unsupported message type.")
     };
