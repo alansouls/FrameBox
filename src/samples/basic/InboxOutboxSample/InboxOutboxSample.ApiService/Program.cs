@@ -39,7 +39,7 @@ builder.Services.AddRabbitMQMessageHeaderEventContextStorage();
 //builder.Services.AddInProcessListener(builder.Configuration);
 builder.Services.AddDbContext<MyDbContext>((serviceProvider, options) =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("payments-db")).UseAsOutboxStorage(serviceProvider);
+    options.UseNpgsql(builder.Configuration.GetConnectionString("payments-db")).UseAsOutboxMessageGenerator(serviceProvider);
 });
 
 builder.EnrichNpgsqlDbContext<MyDbContext>();

@@ -6,7 +6,7 @@ namespace FrameBox.Storage.EFCore.Common.Extensions;
 
 public static class DbContextOptionsBuilderExtensions
 {
-    public static DbContextOptionsBuilder UseAsOutboxStorage(this DbContextOptionsBuilder optionsBuilder, 
+    public static DbContextOptionsBuilder UseAsOutboxMessageGenerator(this DbContextOptionsBuilder optionsBuilder, 
         IServiceProvider serviceProvider)
     {
         optionsBuilder.AddInterceptors(
