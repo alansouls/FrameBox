@@ -75,15 +75,24 @@ public static class ServiceCollectionExtensions
 
     private static IServiceCollection AddEventHandler(this IServiceCollection services, Type eventHandlerType)
     {
-        var eventHandlerInterface = eventHandlerType.GetInterfaces()
-            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler<>));
+        var eventHandlerInterfaces = eventHandlerType.GetInterfaces()
+            .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler<>))
+            .ToArray();
 
-        if (eventHandlerInterface is null)
+        if (eventHandlerInterfaces.Length == 0)
         {
             throw new InvalidOperationException($"Type {eventHandlerType.FullName} does not implement IEventHandler<T> interface.");
         }
 
-        return services.AddScoped(eventHandlerType)
-            .AddScoped(eventHandlerInterface, provider => provider.GetRequiredService(eventHandlerType));
+        services.AddScoped(eventHandlerType);
+
+        // A handler may implement IEventHandler<T> for several events, so register the concrete
+        // type against every closed interface it exposes.
+        foreach (var eventHandlerInterface in eventHandlerInterfaces)
+        {
+            services.AddScoped(eventHandlerInterface, provider => provider.GetRequiredService(eventHandlerType));
+        }
+
+        return services;
     }
 }
